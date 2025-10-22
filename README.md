@@ -1,3 +1,3 @@
 # app-boilerplate-demo
 
-Demo site for app boilerplate
+Demo site for app boilerplate.
