@@ -31,8 +31,7 @@
                 position: fixed;
                 left: 50%;
                 transform: translateX(-50%);
-                top: var(--circle-top);
-                transition: top 0.2s ease;
+                top: calc(50vh + (env(safe-area-inset-bottom) - env(safe-area-inset-top)) / 2);
             }
         </style>
     </head>
