@@ -1,87 +1,37 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Centered Circle</title>
-        <style>
-            @property --circle-top {
-                syntax: '<length>';
-                inherits: false;
-                initial-value: 50vh;
-            }
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Centered Circle</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-            * {
-                margin: 0;
-                padding: 0;
-                box-sizing: border-box;
-            }
+        body {
+            min-height: 100vh;
+            overflow-x: hidden;
+            background: #f5f5f5;
+        }
 
-            body {
-                min-height: 100vh;
-                overflow-x: hidden;
-                background: #f5f5f5;
-            }
-
-            .circle {
-                width: 100px;
-                height: 100px;
-                background: #3498db;
-                border-radius: 50%;
-                position: fixed;
-                left: 50%;
-                transform: translateX(-50%);
-                top: calc(50vh + (env(safe-area-inset-bottom) - env(safe-area-inset-top)) / 2);
-            }
-        </style>
-    </head>
-    <body>
-        <div class="circle"></div>
-
-        <script>
-            function isMobile() {
-                return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-            }
-
-            function updateCirclePosition() {
-                const circle = document.querySelector('.circle');
-                const circleHeight = circle.offsetHeight;
-
-                if (isMobile()) {
-                    // На мобильных - центрируем по физическому экрану
-                    const screenHeight = window.screen.height;
-                    const innerHeight = window.innerHeight;
-
-                    // Вычисляем смещение viewport относительно экрана
-                    // На мобильных viewport начинается после status bar
-                    const topOffset = (screenHeight - innerHeight) / 2;
-
-                    // Центр физического экрана минус смещение viewport минус половина круга
-                    const screenCenter = screenHeight / 2;
-                    const topPosition = Math.round(screenCenter - topOffset - circleHeight / 2);
-
-                    document.documentElement.style.setProperty('--circle-top', `${topPosition}px`);
-                } else {
-                    // На десктопе - просто центрируем по viewport
-                    const innerHeight = window.innerHeight;
-                    const topPosition = Math.round((innerHeight - circleHeight) / 2);
-
-                    document.documentElement.style.setProperty('--circle-top', `${topPosition}px`);
-                }
-            }
-
-            window.addEventListener('load', updateCirclePosition);
-            window.addEventListener('resize', updateCirclePosition);
-            window.addEventListener('orientationchange', () => {
-                setTimeout(updateCirclePosition, 100);
-            });
-
-            // Для мобильных - пересчёт при скролле (когда скрывается адресная строка)
-            let scrollTimeout;
-            window.addEventListener('scroll', () => {
-                clearTimeout(scrollTimeout);
-                scrollTimeout = setTimeout(updateCirclePosition, 150);
-            });
-        </script>
-    </body>
+        .circle {
+            width: 100px;
+            height: 100px;
+            background: #3498db;
+            border-radius: 50%;
+            position: fixed;
+            left: 50%;
+            transform: translateX(-50%);
+            /* Центр viewport плюс компенсация разницы между верхом и низом */
+            top: calc(50vh + (env(safe-area-inset-bottom) - env(safe-area-inset-top)) / 2);
+        }
+    </style>
+</head>
+<body>
+    <div class="circle"></div>
+</body>
 </html>
+
