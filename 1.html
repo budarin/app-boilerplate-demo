@@ -6,7 +6,21 @@
     <title>PWA Debug</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { min-height: 100vh; background: #f5f5f5; }
+        body { 
+            min-height: 100vh; 
+            background: #f5f5f5;
+            padding: 20px;
+            font-family: monospace;
+        }
+        
+        .info {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
         
         .circle {
             width: 100px;
@@ -18,60 +32,42 @@
             transform: translateX(-50%);
             top: calc(50vh + (env(safe-area-inset-bottom, 0px) - env(safe-area-inset-top, 0px)) / 2);
         }
-        
-        .debug {
-            position: fixed;
-            top: 10px;
-            left: 10px;
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
-            padding: 10px;
-            font-family: monospace;
-            font-size: 11px;
-            z-index: 1000;
-            max-width: 300px;
-        }
     </style>
 </head>
 <body>
+    <div class="info" id="info">Загрузка...</div>
     <div class="circle"></div>
-    <div class="debug" id="debug"></div>
 
     <script>
-        // Получаем вычисленные значения env()
-        const testDiv = document.createElement('div');
-        testDiv.style.cssText = `
-            position: fixed;
-            top: env(safe-area-inset-top, 0px);
-            bottom: env(safe-area-inset-bottom, 0px);
-            left: env(safe-area-inset-left, 0px);
-            right: env(safe-area-inset-right, 0px);
-        `;
-        document.body.appendChild(testDiv);
-        
-        const computed = getComputedStyle(testDiv);
-        const top = computed.top;
-        const bottom = computed.bottom;
-        const left = computed.left;
-        const right = computed.right;
-        
-        document.body.removeChild(testDiv);
-        
-        // Отображаем информацию
-        document.getElementById('debug').innerHTML = `
-            <strong>Safe Area Insets:</strong><br>
-            top: ${top}<br>
-            bottom: ${bottom}<br>
-            left: ${left}<br>
-            right: ${right}<br>
-            <br>
-            <strong>Screen info:</strong><br>
-            screen.height: ${window.screen.height}px<br>
-            innerHeight: ${window.innerHeight}px<br>
-            <br>
-            <strong>Viewport center:</strong><br>
-            50vh = ${window.innerHeight / 2}px
-        `;
+        setTimeout(() => {
+            const testDiv = document.createElement('div');
+            testDiv.style.cssText = `
+                position: fixed;
+                top: env(safe-area-inset-top, 0px);
+                bottom: env(safe-area-inset-bottom, 0px);
+            `;
+            document.body.appendChild(testDiv);
+            
+            const computed = getComputedStyle(testDiv);
+            const top = computed.top;
+            const bottom = computed.bottom;
+            
+            document.body.removeChild(testDiv);
+            
+            document.getElementById('info').innerHTML = `
+                <strong>Safe Area Insets:</strong><br>
+                top: ${top}<br>
+                bottom: ${bottom}<br>
+                <br>
+                <strong>Screen:</strong><br>
+                height: ${window.screen.height}px<br>
+                innerHeight: ${window.innerHeight}px<br>
+                diff: ${window.screen.height - window.innerHeight}px<br>
+                <br>
+                <strong>Viewport center:</strong><br>
+                50vh = ${window.innerHeight / 2}px
+            `;
+        }, 500);
     </script>
 </body>
 </html>
