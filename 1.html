@@ -3,12 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PWA Circle</title>
+    <meta name="theme-color" content="#673ab7">
+    <title>PWA</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { min-height: 100vh; background: #f5f5f5; }
+        body { 
+            min-height: 100vh; 
+            background: #f5f5f5;
+            overflow: hidden;
+        }
         
-        .circle {
+        .splash {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background: #f5f5f5;
+            z-index: 9999;
+        }
+        
+        .splash__icon {
             width: 100px;
             height: 100px;
             background: #3498db;
@@ -16,69 +31,120 @@
             position: fixed;
             left: 50%;
             transform: translateX(-50%);
-            top: var(--circle-top, 50vh);
+            top: var(--splash-icon-top);
         }
         
-        .debug {
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
-            padding: 10px;
-            font-family: monospace;
-            font-size: 11px;
-            border-radius: 4px;
+        .app {
+            display: none;
+            padding: 20px;
         }
     </style>
 </head>
 <body>
-    <div class="circle"></div>
-    <div class="debug" id="debug">Коснись экрана...</div>
+    <div class="splash">
+        <div class="splash__icon"></div>
+    </div>
+    
+    <div class="app">
+        <h1>Приложение загружено</h1>
+        <p>Коснись экрана в любом месте для калибровки следующего запуска</p>
+    </div>
 
     <script>
-        let viewportOffsetTop = null;
-
-        document.addEventListener('touchstart', (e) => {
-            const touch = e.touches[0];
-            
-            // Координаты относительно viewport
-            const clientY = touch.clientY;
-            
-            // Координаты относительно физического экрана
-            const screenY = touch.screenY;
-            
-            // Вычисляем смещение viewport от верха экрана
-            viewportOffsetTop = screenY - clientY;
-            
-            updateCirclePosition();
-            
-            document.getElementById('debug').innerHTML = `
-clientY: ${clientY.toFixed(1)}px<br>
-screenY: ${screenY.toFixed(1)}px<br>
-viewport offset: ${viewportOffsetTop.toFixed(1)}px
-            `;
-        }, { passive: true });
-
-        function updateCirclePosition() {
-            if (viewportOffsetTop === null) return;
-            
+        const STORAGE_KEY = 'pwa_viewport_offset';
+        
+        function getOrientation() {
+            return window.innerWidth > window.innerHeight ? 'landscape' : 'portrait';
+        }
+        
+        function getStorageKey() {
+            const orientation = getOrientation();
             const screenHeight = window.screen.height;
-            const circleHeight = 100;
+            return `${STORAGE_KEY}_${orientation}_${screenHeight}`;
+        }
+        
+        function loadViewportOffset() {
+            const key = getStorageKey();
+            const stored = localStorage.getItem(key);
+            return stored ? parseFloat(stored) : null;
+        }
+        
+        function saveViewportOffset(offset) {
+            const key = getStorageKey();
+            localStorage.setItem(key, offset.toString());
+        }
+        
+        function calculateSplashPosition() {
+            const screenHeight = window.screen.height;
+            const innerHeight = window.innerHeight;
+            const iconHeight = 100;
             
-            // Центр физического экрана
+            // Пробуем загрузить сохранённый offset
+            let viewportOffset = loadViewportOffset();
+            
+            if (viewportOffset === null) {
+                // Первый запуск - используем приближение
+                viewportOffset = (screenHeight - innerHeight) / 2;
+            }
+            
+            // Вычисляем позицию иконки
             const screenCenter = screenHeight / 2;
-            
-            // Позиция круга: центр экрана - смещение viewport - половина круга
-            const topPosition = screenCenter - viewportOffsetTop - (circleHeight / 2);
+            const topPosition = screenCenter - viewportOffset - (iconHeight / 2);
             
             document.documentElement.style.setProperty(
-                '--circle-top',
+                '--splash-icon-top',
                 `${Math.round(topPosition)}px`
             );
         }
-
-        window.addEventListener('resize', updateCirclePosition);
+        
+        // Калибровка при касании
+        let calibrated = false;
+        
+        function calibrate(e) {
+            if (calibrated) return;
+            
+            const touch = e.touches ? e.touches[0] : e;
+            const clientY = touch.clientY;
+            const screenY = touch.screenY;
+            
+            // Вычисляем точный viewport offset
+            const viewportOffset = screenY - clientY;
+            
+            // Сохраняем
+            saveViewportOffset(viewportOffset);
+            calibrated = true;
+            
+            console.log(`Calibrated: viewport offset = ${viewportOffset}px`);
+        }
+        
+        document.addEventListener('touchstart', calibrate, { once: true, passive: true });
+        document.addEventListener('click', calibrate, { once: true });
+        
+        // Повторная калибровка при смене ориентации
+        window.addEventListener('orientationchange', () => {
+            calibrated = false;
+            setTimeout(() => {
+                calculateSplashPosition();
+            }, 300);
+        });
+        
+        // Инициализация при загрузке
+        calculateSplashPosition();
+        
+        // Имитация загрузки приложения
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                // Скрываем splash
+                const splash = document.querySelector('.splash');
+                splash.style.opacity = '0';
+                splash.style.transition = 'opacity 0.3s';
+                
+                setTimeout(() => {
+                    splash.style.display = 'none';
+                    document.querySelector('.app').style.display = 'block';
+                }, 300);
+            }, 2000);
+        });
     </script>
 </body>
 </html>
