@@ -7,10 +7,10 @@
     "display": "standalone",
     "start_url": "./",
     "short_name": "My Tasks Plus",
-    "theme_color": "#6b538c",
+    "theme_color": "#d6bbfb",
     "description": "My Tasks Plus - application for managing personal tasks",
     "orientation": "any",
-    "background_color": "#fff7ff",
+    "background_color": "#151218",
     "prefer_related_applications": false,
     "categories": [
         "productivity"
