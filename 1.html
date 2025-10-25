@@ -2,25 +2,11 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>PWA Debug</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PWA Circle</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            min-height: 100vh; 
-            background: #f5f5f5;
-            padding: 20px;
-            font-family: monospace;
-        }
-        
-        .info {
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
-            font-size: 14px;
-            line-height: 1.6;
-            margin-bottom: 20px;
-        }
+        body { min-height: 100vh; background: #f5f5f5; }
         
         .circle {
             width: 100px;
@@ -30,44 +16,69 @@
             position: fixed;
             left: 50%;
             transform: translateX(-50%);
-            top: calc(50vh + (env(safe-area-inset-bottom, 0px) - env(safe-area-inset-top, 0px)) / 2);
+            top: var(--circle-top, 50vh);
+        }
+        
+        .debug {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 11px;
+            border-radius: 4px;
         }
     </style>
 </head>
 <body>
-    <div class="info" id="info">Загрузка...</div>
     <div class="circle"></div>
+    <div class="debug" id="debug">Коснись экрана...</div>
 
     <script>
-        setTimeout(() => {
-            const testDiv = document.createElement('div');
-            testDiv.style.cssText = `
-                position: fixed;
-                top: env(safe-area-inset-top, 0px);
-                bottom: env(safe-area-inset-bottom, 0px);
+        let viewportOffsetTop = null;
+
+        document.addEventListener('touchstart', (e) => {
+            const touch = e.touches[0];
+            
+            // Координаты относительно viewport
+            const clientY = touch.clientY;
+            
+            // Координаты относительно физического экрана
+            const screenY = touch.screenY;
+            
+            // Вычисляем смещение viewport от верха экрана
+            viewportOffsetTop = screenY - clientY;
+            
+            updateCirclePosition();
+            
+            document.getElementById('debug').innerHTML = `
+clientY: ${clientY.toFixed(1)}px<br>
+screenY: ${screenY.toFixed(1)}px<br>
+viewport offset: ${viewportOffsetTop.toFixed(1)}px
             `;
-            document.body.appendChild(testDiv);
+        }, { passive: true });
+
+        function updateCirclePosition() {
+            if (viewportOffsetTop === null) return;
             
-            const computed = getComputedStyle(testDiv);
-            const top = computed.top;
-            const bottom = computed.bottom;
+            const screenHeight = window.screen.height;
+            const circleHeight = 100;
             
-            document.body.removeChild(testDiv);
+            // Центр физического экрана
+            const screenCenter = screenHeight / 2;
             
-            document.getElementById('info').innerHTML = `
-                <strong>Safe Area Insets:</strong><br>
-                top: ${top}<br>
-                bottom: ${bottom}<br>
-                <br>
-                <strong>Screen:</strong><br>
-                height: ${window.screen.height}px<br>
-                innerHeight: ${window.innerHeight}px<br>
-                diff: ${window.screen.height - window.innerHeight}px<br>
-                <br>
-                <strong>Viewport center:</strong><br>
-                50vh = ${window.innerHeight / 2}px
-            `;
-        }, 500);
+            // Позиция круга: центр экрана - смещение viewport - половина круга
+            const topPosition = screenCenter - viewportOffsetTop - (circleHeight / 2);
+            
+            document.documentElement.style.setProperty(
+                '--circle-top',
+                `${Math.round(topPosition)}px`
+            );
+        }
+
+        window.addEventListener('resize', updateCirclePosition);
     </script>
 </body>
 </html>
