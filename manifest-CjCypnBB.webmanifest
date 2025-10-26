@@ -10,7 +10,7 @@
     "theme_color": "#6b538c",
     "description": "My Tasks Plus - application for managing personal tasks",
     "orientation": "any",
-    "background_color": "#fff7ff",
+    "background_color": "#151218",
     "prefer_related_applications": false,
     "categories": [
         "productivity"
