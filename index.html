@@ -2,7 +2,7 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-        <script>var e=window.matchMedia(`(prefers-color-scheme: dark)`).matches?`dark`:`light`,t=localStorage.getItem(`theme`)||e;[`light`,`dark`].includes(t)&&document.documentElement.setAttribute(`data-theme`,e);</script>
+        <script>var e=window.matchMedia(`(prefers-color-scheme: dark)`).matches?`dark`:`light`,t=localStorage.getItem(`theme`)||e;[`light`,`dark`].includes(t)&&(document.documentElement.setAttribute(`data-theme`,t),document.querySelector(`meta[name="theme-color"]`)?.setAttribute(`content`,t===`light`?`#fff7ff`:`#151218`));</script>
         <script>var e=Promise.resolve(!0),t=800,n=1350,r=setTimeout(()=>{e=new Promise(e=>{setTimeout(()=>{e(!0)},n)});let t=document.querySelector(`.splash-screen__loader-text-container`);t&&(t.style.opacity=`1`)},t);window.getReadyToStartPromise=()=>e,window.splashScreenCleanup=()=>{clearTimeout(r),e=Promise.resolve(!0)};</script>
 
         <title>Vite + React + TS</title>
@@ -11,7 +11,7 @@
         <meta name="theme-color" content="#151218">
         <meta name="color-scheme" content="light dark">
 
-      <script type="module" crossorigin="" src="./assets/main-B70os0HC.js"></script>
+      <script type="module" crossorigin="" src="./assets/main-CEXvnz-o.js"></script>
       <link rel="modulepreload" crossorigin="" href="./assets/rolldown-runtime-BHJ7HXw7.js">
       <link rel="modulepreload" crossorigin="" href="./assets/react-Cawi1mdu.js">
       <link rel="modulepreload" crossorigin="" href="./assets/npm-BYuwTU2c.js">
