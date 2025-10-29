@@ -1,5 +1,6 @@
 <!DOCTYPE html><html lang="ru"><head>
         <meta charset="UTF-8">
+<<<<<<< HEAD
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Vite + React + TS</title><script>function e(){let e=`dark`,t=`light`,n=`#151218`,r=`#fff7ff`,i=window.matchMedia(`(prefers-color-scheme: ${e})`).matches?e:t;if(window.userTheme=localStorage.getItem(`theme`)||i,window.setTimeout(()=>{delete window.userTheme},10),[t,e].includes(userTheme)){let i=userTheme===t;document.documentElement.setAttribute(`data-theme`,userTheme),document.querySelector(`meta[name="theme-color"]`)?.setAttribute(`content`,i?r:n);let a=document.createElement(`meta`);a.name=`theme-color`,a.content=i?r:n,document.head.appendChild(a);let o=document.createElement(`meta`);o.name=`color-scheme`,o.content=i?`${t} ${e}`:`${e} ${t}`,document.head.appendChild(o)}}e();function t(){let e=document.createElement(`link`);e.rel=`manifest`,e.href=`manifest.${window.userTheme}._DqqbVjg.webmanifest`;let t=document.currentScript;t&&t.parentNode&&t.parentNode.insertBefore(e,t.nextSibling)}t();</script>
 
@@ -14,6 +15,58 @@
       <link rel="modulepreload" crossorigin="" href="./assets/rolldown-runtime-BHJ7HXw7.js">
       <link rel="modulepreload" crossorigin="" href="./assets/react-Cawi1mdu.js">
       <link rel="modulepreload" crossorigin="" href="./assets/npm-Cp2sAHG7.js">
+=======
+        <meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>const darkHash = '_DqqbVjg';
+const lightHash = '_DqqbVjg';
+const darkThemeColor = '#151218';
+const lightThemeColor = '#fff7ff';
+const sytemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+const userTheme = localStorage.getItem('theme') || sytemTheme;
+
+if (['light', 'dark'].includes(userTheme)) {
+    document.documentElement.setAttribute('data-theme', userTheme);
+    document
+        .querySelector('meta[name="theme-color"]')
+        ?.setAttribute('content', userTheme === 'light' ? lightThemeColor : darkThemeColor);
+
+    const manifestLink = document.createElement('link');
+    manifestLink.rel = 'manifest';
+    if (userTheme === 'light') {
+        manifestLink.href = `manifest.light.${lightHash}.webmanifest`;
+    } else {
+        manifestLink.href = `manifest.dark.${darkHash}.webmanifest`;
+    }
+
+    const myScript = document.currentScript;
+    if (myScript && myScript.parentNode) {
+        myScript.parentNode.insertBefore(manifestLink, myScript.nextSibling);
+    }
+
+    const themeColorMeta = document.createElement('meta');
+    themeColorMeta.name = 'theme-color';
+    themeColorMeta.content = userTheme === 'light' ? lightThemeColor : darkThemeColor;
+    document.head.appendChild(themeColorMeta);
+
+    const colorSchemeMeta = document.createElement('meta');
+    colorSchemeMeta.name = 'color-scheme';
+    colorSchemeMeta.content = userTheme === 'light' ? 'light dark' : 'dark light';
+    document.head.appendChild(colorSchemeMeta);
+}
+</script>
+
+        
+
+        <script>var e=Promise.resolve(!0),t=800,n=1350,r=setTimeout(()=>{e=new Promise(e=>{setTimeout(()=>{e(!0)},n)});let t=document.querySelector(`.splash-screen__loader-text-container`);t&&(t.style.opacity=`1`)},t);window.getReadyToStartPromise=()=>e,window.splashScreenCleanup=()=>{clearTimeout(r),e=Promise.resolve(!0)};</script>
+
+        <title>Vite + React + TS</title>
+        <link rel="icon" type="image/svg+xml" href="./assets/svgs/app-icon-BN31uYWN.svg">
+
+      <script type="module" crossorigin="" src="./assets/main-AI0o8ebi.js"></script>
+      <link rel="modulepreload" crossorigin="" href="./assets/rolldown-runtime-Bg36xPkY.js">
+      <link rel="modulepreload" crossorigin="" href="./assets/react-DJyOZ6Q-.js">
+      <link rel="modulepreload" crossorigin="" href="./assets/npm-CJUaL9FP.js">
+>>>>>>> c738189087451e1cf4f17fac2767cac6ff01a93d
       <link rel="preload" href="./assets/main-BujZa4qt.css" as="style" crossorigin="">
 <link rel="stylesheet" media="print" crossorigin="" href="./assets/main-BujZa4qt.css" onload="this.media='all'">
     </head>
