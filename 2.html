@@ -166,6 +166,7 @@
 
             function init() {
                 if ('ontouchstart' in window) {
+                    document.addEventListener('touchstart', calibrate, { passive: true });
                     window.addEventListener('orientationchange', handleOrientationChange);
                 }
 
