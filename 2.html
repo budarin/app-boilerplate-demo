@@ -5,9 +5,16 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Тест центрирования иконки splash screen по экрану</title>
         <style>
-            :root {
-                --offset-x: 0px;
-                --offset-y: 0px;
+            @property --offset-x {
+                inherits: false;
+                initial-value: 0;
+                syntax: '<length>';
+            }
+
+            @property --offset-y {
+                inherits: false;
+                initial-value: 0;
+                syntax: '<length>';
             }
 
             * {
