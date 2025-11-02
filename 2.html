@@ -33,10 +33,7 @@
                 position: fixed;
                 inset-block-start: 50%;
                 inset-inline-start: 50%;
-                transform: translate(
-                    calc(-50% + var(--offset-x, 0)),
-                    calc(-50% + var(--offset-y, 0))
-                );
+                transform: translate(-50%, -50%) translate(var(--offset-x, 0), var(--offset-y, 0));
 
                 inline-size: 120px;
                 block-size: 120px;
