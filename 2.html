@@ -252,6 +252,41 @@
                 const offsets = loadOffsets();
                 if (offsets) {
                     applyOffsets(offsets.top, offsets.left);
+                } else {
+                    if (navigator.userActivation?.hasBeenActive) {
+                        // Пользователь уже взаимодействовал - генерируем кастомное событие
+                        const customEvent = new TouchEvent('touchstart', {
+                            bubbles: true,
+                            cancelable: true,
+                            touches: [
+                                new Touch({
+                                    identifier: 0,
+                                    target: document.body,
+                                    clientX: window.innerWidth / 2,
+                                    clientY: window.innerHeight / 2,
+                                    screenX: window.screen.width / 2,
+                                    screenY: window.screen.height / 2,
+                                    radiusX: 0,
+                                    radiusY: 0,
+                                    rotationAngle: 0,
+                                    force: 0,
+                                }),
+                            ],
+                            targetTouches: [],
+                            changedTouches: [],
+                            ctrlKey: false,
+                            shiftKey: false,
+                            altKey: false,
+                            metaKey: false,
+                        });
+                        document.dispatchEvent(customEvent);
+                    } else {
+                        // Если пользователь еще не взаимодействовал - вешаем одноразовый обработчик
+                        document.addEventListener('touchstart', calibrate, {
+                            passive: true,
+                            once: true,
+                        });
+                    }
                 }
             }
 
@@ -266,20 +301,6 @@
                         screen.orientation.addEventListener('change', handleOrientationChange);
                     }
                 }
-
-                // Обработка resize (может измениться размер viewport)
-                let resizeTimeout;
-                window.addEventListener('resize', () => {
-                    clearTimeout(resizeTimeout);
-                    resizeTimeout = setTimeout(() => {
-                        const offsets = loadOffsets();
-                        if (offsets) {
-                            applyOffsets(offsets.top, offsets.left);
-                        } else {
-                            applyOffsets(0, 0);
-                        }
-                    }, 100);
-                });
 
                 // Загружаем offset'ы при запуске
                 initializeOffsets();
