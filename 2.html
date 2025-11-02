@@ -33,7 +33,6 @@
                 position: fixed;
                 inset-block-start: 50%;
                 inset-inline-start: 50%;
-                transform: translate(calc(-50% + var(--offset-x)), calc(-50% + var(--offset-y)));
 
                 inline-size: 120px;
                 block-size: 120px;
@@ -233,6 +232,12 @@ hasBeenActive: ${navigator.userActivation?.hasBeenActive || false}`;
 
                 document.documentElement.style.setProperty('--offset-x', offsetXStr);
                 document.documentElement.style.setProperty('--offset-y', offsetYStr);
+
+                // Применяем transform напрямую через JavaScript, т.к. CSS переменные в calc() не работают
+                const icon = document.getElementById('icon');
+                if (icon) {
+                    icon.style.transform = `translate(calc(-50% + ${offsetXStr}), calc(-50% + ${offsetYStr}))`;
+                }
 
                 // Принудительное обновление через requestAnimationFrame
                 requestAnimationFrame(() => {
