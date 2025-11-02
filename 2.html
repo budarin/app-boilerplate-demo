@@ -288,19 +288,8 @@ hasBeenActive: ${navigator.userActivation?.hasBeenActive || false}${syntheticTex
                         // Offsets для этой ориентации есть - применяем их
                         applyOffsets(offsets.top, offsets.left);
                     } else {
-                        // Offsets для этой ориентации нет
+                        // Offsets для этой ориентации нет - нужно реальное касание для калибровки
                         updateDebugPanel();
-                        // Если пользователь уже взаимодействовал - пробуем создать click, который вызовет touchstart
-                        if (navigator.userActivation?.hasBeenActive) {
-                            // Просто кликаем по body - браузер создаст touchstart с правильными screenX/screenY
-                            document.body.click();
-                        } else {
-                            // Если пользователь еще не взаимодействовал - вешаем обработчик
-                            document.addEventListener('touchstart', calibrate, {
-                                passive: true,
-                                once: true,
-                            });
-                        }
                     }
                 }, 500);
             }
