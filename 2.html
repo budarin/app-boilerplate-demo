@@ -108,6 +108,11 @@
                 const offsetX = computedStyle.getPropertyValue('--offset-x').trim();
                 const offsetY = computedStyle.getPropertyValue('--offset-y').trim();
 
+                const screenCenterX = window.screen.width / 2;
+                const screenCenterY = window.screen.height / 2;
+                const viewportCenterX = window.innerWidth / 2;
+                const viewportCenterY = window.innerHeight / 2;
+
                 const text = `Ориентация: ${orientation}°
 Экран: ${window.screen.width}×${window.screen.height}
 Viewport: ${window.innerWidth}×${window.innerHeight}
@@ -117,6 +122,8 @@ ${
 Left offset: ${offsets.left.toFixed(1)}px`
         : 'Не калибровано'
 }
+screenCenter: ${screenCenterX.toFixed(1)}×${screenCenterY.toFixed(1)}
+viewportCenter: ${viewportCenterX.toFixed(1)}×${viewportCenterY.toFixed(1)}
 --offset-x: ${offsetX || '0'}
 --offset-y: ${offsetY || '0'}
 hasBeenActive: ${navigator.userActivation?.hasBeenActive || false}`;
@@ -171,9 +178,12 @@ hasBeenActive: ${navigator.userActivation?.hasBeenActive || false}`;
                 const viewportCenterY = window.innerHeight / 2;
                 const viewportCenterX = window.innerWidth / 2;
 
-                // Смещение от центра viewport к центру экрана
-                const offsetY = screenCenterY - (topOffset + viewportCenterY);
-                const offsetX = screenCenterX - (leftOffset + viewportCenterX);
+                // Иконка находится в центре viewport (50%)
+                // Центр viewport от верха/лева экрана = topOffset + viewportCenter
+                // Центр экрана = screenCenter
+                // Смещение = центр viewport - центр экрана (инвертировано)
+                const offsetY = topOffset + viewportCenterY - screenCenterY;
+                const offsetX = leftOffset + viewportCenterX - screenCenterX;
 
                 document.documentElement.style.setProperty('--offset-x', `${offsetX.toFixed(2)}px`);
                 document.documentElement.style.setProperty('--offset-y', `${offsetY.toFixed(2)}px`);
