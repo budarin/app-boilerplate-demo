@@ -246,23 +246,39 @@ hasBeenActive: ${navigator.userActivation?.hasBeenActive || false}`;
 
             function handleOrientationChange() {
                 setTimeout(() => {
-                    const offsets = loadOffsets();
-                    if (offsets) {
-                        applyOffsets(offsets.top, offsets.left);
-                    } else {
-                        updateDebugPanel();
-                        document.addEventListener('touchstart', calibrate, {
-                            passive: true,
-                            once: true,
-                        });
-                    }
-                }, 150);
+                    requestAnimationFrame(() => {
+                        const offsets = loadOffsets();
+                        if (offsets) {
+                            // Пересчитываем offsets для новой ориентации
+                            applyOffsets(offsets.top, offsets.left);
+                        } else {
+                            updateDebugPanel();
+                            document.addEventListener('touchstart', calibrate, {
+                                passive: true,
+                                once: true,
+                            });
+                        }
+                    });
+                }, 300);
             }
 
             function init() {
                 if ('ontouchstart' in window) {
                     document.addEventListener('touchstart', calibrate, { passive: true });
                     window.addEventListener('orientationchange', handleOrientationChange);
+                }
+
+                // Применяем offsets при загрузке страницы
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', () => {
+                        requestAnimationFrame(() => {
+                            initializeOffsets();
+                        });
+                    });
+                } else {
+                    requestAnimationFrame(() => {
+                        initializeOffsets();
+                    });
                 }
             }
 
