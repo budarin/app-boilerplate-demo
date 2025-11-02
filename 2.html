@@ -31,7 +31,8 @@
             }
 
             .debug-panel {
-                pointer-events: none;
+                pointer-events: auto;
+                cursor: pointer;
 
                 position: fixed;
                 inset-block-start: 10px;
@@ -199,36 +200,53 @@
                 const iconTop = computedStyle.getPropertyValue('--icon-top').trim();
                 const iconLeft = computedStyle.getPropertyValue('--icon-left').trim();
 
-                panel.innerHTML = `
-                    <div class="debug-row">Ориентация: ${orientation}°</div>
-                    <div class="debug-row">Экран: ${screenWidth}×${screenHeight}</div>
-                    <div class="debug-row">Viewport: ${innerWidth}×${innerHeight}</div>
-                    ${
-                        offsets
-                            ? `
-                    <div class="debug-row">Top offset: ${offsets.top.toFixed(1)}px</div>
-                    <div class="debug-row">Left offset: ${offsets.left.toFixed(1)}px</div>
-                    `
-                            : '<div class="debug-row">Не калибровано</div>'
-                    }
-                    ${
-                        data.screenCenterY !== undefined
-                            ? `
-                    <div class="debug-row">Центр экрана Y: ${data.screenCenterY.toFixed(1)}px</div>
-                    <div class="debug-row">Иконка top: ${data.iconTop?.toFixed(1) || '—'}px</div>
-                    `
-                            : ''
-                    }
-                    ${
-                        data.screenY !== undefined
-                            ? `
-                    <div class="debug-row">Touch screenY: ${data.screenY.toFixed(1)}</div>
-                    <div class="debug-row">Touch clientY: ${data.clientY.toFixed(1)}</div>
-                    `
-                            : ''
-                    }
-                    <div class="debug-row">CSS top: ${iconTop || '50%'}</div>
-                `;
+                const debugText = `
+Ориентация: ${orientation}°
+Экран: ${screenWidth}×${screenHeight}
+Viewport: ${innerWidth}×${innerHeight}
+${
+    offsets
+        ? `Top offset: ${offsets.top.toFixed(1)}px
+Left offset: ${offsets.left.toFixed(1)}px`
+        : 'Не калибровано'
+}
+${
+    data.screenCenterY !== undefined
+        ? `Центр экрана Y: ${data.screenCenterY.toFixed(1)}px
+Центр экрана X: ${data.screenCenterX?.toFixed(1) || '—'}px
+Иконка top: ${data.iconTop?.toFixed(1) || '—'}px
+Иконка left: ${data.iconLeft?.toFixed(1) || '—'}px`
+        : ''
+}
+${
+    data.screenY !== undefined
+        ? `Touch screenY: ${data.screenY.toFixed(1)}
+Touch clientY: ${data.clientY.toFixed(1)}
+Touch screenX: ${data.screenX?.toFixed(1) || '—'}
+Touch clientX: ${data.clientX?.toFixed(1) || '—'}`
+        : ''
+}
+CSS top: ${iconTop || '50%'}
+CSS left: ${iconLeft || '50%'}
+hasBeenActive: ${navigator.userActivation?.hasBeenActive || false}
+`;
+
+                panel.innerHTML = debugText
+                    .split('\n')
+                    .filter((line) => line.trim())
+                    .map((line) => `<div class="debug-row">${line}</div>`)
+                    .join('');
+
+                // Добавляем обработчик клика для копирования
+                panel.onclick = () => {
+                    navigator.clipboard.writeText(debugText.trim()).then(() => {
+                        const originalBg = panel.style.background;
+                        panel.style.background = 'rgb(144 238 144 / 70%)';
+                        setTimeout(() => {
+                            panel.style.background = originalBg;
+                        }, 200);
+                    });
+                };
             }
 
             // ===== Инициализация offset'ов при загрузке =====
@@ -249,48 +267,66 @@
             // ===== Обработка смены ориентации =====
 
             function handleOrientationChange() {
-                const offsets = loadOffsets();
-                if (offsets) {
-                    applyOffsets(offsets.top, offsets.left);
-                } else {
-                    if (navigator.userActivation?.hasBeenActive) {
-                        // Пользователь уже взаимодействовал - генерируем кастомное событие
-                        const customEvent = new TouchEvent('touchstart', {
-                            bubbles: true,
-                            cancelable: true,
-                            touches: [
-                                new Touch({
-                                    identifier: 0,
-                                    target: document.body,
-                                    clientX: window.innerWidth / 2,
-                                    clientY: window.innerHeight / 2,
-                                    screenX: window.screen.width / 2,
-                                    screenY: window.screen.height / 2,
-                                    radiusX: 0,
-                                    radiusY: 0,
-                                    rotationAngle: 0,
-                                    force: 0,
-                                }),
-                            ],
-                            targetTouches: [],
-                            changedTouches: [],
-                            ctrlKey: false,
-                            shiftKey: false,
-                            altKey: false,
-                            metaKey: false,
-                        });
-                        document.dispatchEvent(customEvent);
+                // Даем время браузеру обновить размеры
+                requestAnimationFrame(() => {
+                    const offsets = loadOffsets();
+                    if (offsets) {
+                        applyOffsets(offsets.top, offsets.left);
+                        updateDebugPanel();
                     } else {
-                        // Если пользователь еще не взаимодействовал - вешаем одноразовый обработчик
-                        document.addEventListener('touchstart', calibrate, {
-                            passive: true,
-                            once: true,
-                        });
+                        if (navigator.userActivation?.hasBeenActive) {
+                            // Пользователь уже взаимодействовал - генерируем кастомное событие
+                            try {
+                                const customEvent = new TouchEvent('touchstart', {
+                                    bubbles: true,
+                                    cancelable: true,
+                                    touches: [
+                                        new Touch({
+                                            identifier: 0,
+                                            target: document.body,
+                                            clientX: window.innerWidth / 2,
+                                            clientY: window.innerHeight / 2,
+                                            screenX: window.screen.width / 2,
+                                            screenY: window.screen.height / 2,
+                                            radiusX: 0,
+                                            radiusY: 0,
+                                            rotationAngle: 0,
+                                            force: 0,
+                                        }),
+                                    ],
+                                    targetTouches: [],
+                                    changedTouches: [],
+                                    ctrlKey: false,
+                                    shiftKey: false,
+                                    altKey: false,
+                                    metaKey: false,
+                                });
+                                document.dispatchEvent(customEvent);
+                            } catch (e) {
+                                // Если не получилось - вешаем обработчик
+                                document.addEventListener('touchstart', calibrate, {
+                                    passive: true,
+                                    once: true,
+                                });
+                            }
+                        } else {
+                            // Если пользователь еще не взаимодействовал - вешаем одноразовый обработчик
+                            document.addEventListener('touchstart', calibrate, {
+                                passive: true,
+                                once: true,
+                            });
+                        }
+                        updateDebugPanel();
                     }
-                }
+                });
             }
 
             function init() {
+                // Регистрируем обработчик touchstart для калибровки
+                if ('ontouchstart' in window) {
+                    document.addEventListener('touchstart', calibrate, { passive: true });
+                }
+
                 // Регистрируем обработчики смены ориентации
                 if ('ontouchstart' in window) {
                     window.addEventListener('orientationchange', handleOrientationChange);
