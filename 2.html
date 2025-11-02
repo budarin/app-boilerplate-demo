@@ -159,12 +159,17 @@
             }
 
             function handleOrientationChange() {
-                const offsets = loadOffsets();
-                if (offsets) {
-                    applyOffsets(offsets.top, offsets.left);
-                } else {
-                    window.addEventListener('touchstart', calibrate, { passive: true, once: true });
-                }
+                setTimeout(() => {
+                    const offsets = loadOffsets();
+                    if (offsets) {
+                        applyOffsets(offsets.top, offsets.left);
+                    } else {
+                        document.addEventListener('touchstart', calibrate, {
+                            passive: true,
+                            once: true,
+                        });
+                    }
+                }, 100);
             }
 
             function init() {
