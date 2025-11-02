@@ -291,9 +291,6 @@
             }
 
             function init() {
-                // Регистрируем обработчик touchstart для калибровки
-                document.addEventListener('touchstart', calibrate, { passive: true });
-
                 // Регистрируем обработчики смены ориентации
                 if ('ontouchstart' in window) {
                     window.addEventListener('orientationchange', handleOrientationChange);
@@ -309,12 +306,7 @@
                 updateDebugPanel();
             }
 
-            // Запуск при загрузке DOM
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', init);
-            } else {
-                init();
-            }
+            init();
         </script>
     </body>
 </html>
