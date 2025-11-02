@@ -233,11 +233,6 @@ hasBeenActive: ${navigator.userActivation?.hasBeenActive || false}${syntheticTex
                 const screenY = touch.screenY;
                 const clientX = touch.clientX;
                 const clientY = touch.clientY;
-
-                if (typeof screenX === 'undefined' || typeof screenY === 'undefined') {
-                    return;
-                }
-
                 const topOffset = screenY - clientY;
                 const leftOffset = screenX - clientX;
 
@@ -261,10 +256,6 @@ hasBeenActive: ${navigator.userActivation?.hasBeenActive || false}${syntheticTex
                 const viewportCenterY = window.innerHeight / 2;
                 const viewportCenterX = window.innerWidth / 2;
 
-                // Иконка находится в центре viewport (50%)
-                // Центр viewport от верха/лева экрана = topOffset + viewportCenter
-                // Центр экрана = screenCenter
-                // Смещение = центр экрана - центр viewport (чтобы сдвинуть иконку к центру экрана)
                 const offsetY = screenCenterY - (topOffset + viewportCenterY);
                 const offsetX = screenCenterX - (leftOffset + viewportCenterX);
 
@@ -281,6 +272,10 @@ hasBeenActive: ${navigator.userActivation?.hasBeenActive || false}${syntheticTex
             }
 
             function initializeOffsets() {
+                // Явно инициализируем переменные в 0px
+                document.documentElement.style.setProperty('--offset-x');
+                document.documentElement.style.setProperty('--offset-y');
+
                 const offsets = loadOffsets();
                 if (offsets) {
                     applyOffsets(offsets.top, offsets.left);
@@ -290,17 +285,14 @@ hasBeenActive: ${navigator.userActivation?.hasBeenActive || false}${syntheticTex
             }
 
             function handleOrientationChange() {
-                // Таймаут нужен только для обновления размеров viewport после смены ориентации
-                setTimeout(() => {
-                    const offsets = loadOffsets();
-                    if (offsets) {
-                        // Offsets для этой ориентации есть - применяем их
-                        applyOffsets(offsets.top, offsets.left);
-                    } else {
-                        // Offsets для этой ориентации нет - нужно реальное касание для калибровки
-                        updateDebugPanel();
-                    }
-                }, 500);
+                const offsets = loadOffsets();
+                if (offsets) {
+                    // Offsets для этой ориентации есть - применяем их
+                    applyOffsets(offsets.top, offsets.left);
+                } else {
+                    // Offsets для этой ориентации нет - нужно реальное касание для калибровки
+                    updateDebugPanel();
+                }
             }
 
             function init() {
