@@ -164,14 +164,23 @@ calc: должен быть offset: ${calculatedOffsetX.toFixed(1)}×${calculate
 Синтетическое событие:
   Ошибка: ${syntheticEventInfo.error}`;
                     } else {
-                        syntheticText = `
+                        if (syntheticEventInfo.usedLeftOffset !== undefined) {
+                            syntheticText = `
 Синтетическое событие:
   clientX: ${syntheticEventInfo.clientX.toFixed(1)}
   clientY: ${syntheticEventInfo.clientY.toFixed(1)}
   screenX: ${syntheticEventInfo.screenX.toFixed(1)}
   screenY: ${syntheticEventInfo.screenY.toFixed(1)}
-  estimatedLeftOffset: ${syntheticEventInfo.estimatedLeftOffset.toFixed(1)}
-  estimatedTopOffset: ${syntheticEventInfo.estimatedTopOffset.toFixed(1)}`;
+  usedLeftOffset: ${syntheticEventInfo.usedLeftOffset.toFixed(1)}
+  usedTopOffset: ${syntheticEventInfo.usedTopOffset.toFixed(1)}`;
+                        } else {
+                            syntheticText = `
+Синтетическое событие:
+  clientX: ${syntheticEventInfo.clientX.toFixed(1)}
+  clientY: ${syntheticEventInfo.clientY.toFixed(1)}
+  screenX: ${syntheticEventInfo.screenX.toFixed(1)}
+  screenY: ${syntheticEventInfo.screenY.toFixed(1)}`;
+                        }
                     }
                 }
 
@@ -281,67 +290,10 @@ hasBeenActive: ${navigator.userActivation?.hasBeenActive || false}${syntheticTex
                     } else {
                         // Offsets для этой ориентации нет
                         updateDebugPanel();
-                        // Если пользователь уже взаимодействовал - генерируем синтетическое событие
+                        // Если пользователь уже взаимодействовал - пробуем создать click, который вызовет touchstart
                         if (navigator.userActivation?.hasBeenActive) {
-                            const centerX = window.innerWidth / 2;
-                            const centerY = window.innerHeight / 2;
-
-                            // Оцениваем offsets как среднее между screen и viewport
-                            const estimatedLeftOffset =
-                                (window.screen.width - window.innerWidth) / 2;
-                            const estimatedTopOffset =
-                                (window.screen.height - window.innerHeight) / 2;
-
-                            // Создаем реальное синтетическое TouchEvent
-                            try {
-                                const screenX = centerX + estimatedLeftOffset;
-                                const screenY = centerY + estimatedTopOffset;
-
-                                // Сохраняем информацию о синтетическом событии для отладки
-                                syntheticEventInfo = {
-                                    clientX: centerX,
-                                    clientY: centerY,
-                                    screenX: screenX,
-                                    screenY: screenY,
-                                    estimatedLeftOffset: estimatedLeftOffset,
-                                    estimatedTopOffset: estimatedTopOffset,
-                                };
-
-                                const touch = new Touch({
-                                    identifier: Date.now(),
-                                    target: document.body,
-                                    clientX: centerX,
-                                    clientY: centerY,
-                                    screenX: screenX,
-                                    screenY: screenY,
-                                    radiusX: 10,
-                                    radiusY: 10,
-                                    rotationAngle: 0,
-                                    force: 0.5,
-                                });
-
-                                const touchEvent = new TouchEvent('touchstart', {
-                                    cancelable: true,
-                                    bubbles: true,
-                                    touches: [touch],
-                                    targetTouches: [touch],
-                                    changedTouches: [touch],
-                                });
-
-                                // Отправляем синтетическое событие элементу
-                                document.body.dispatchEvent(touchEvent);
-
-                                // Обновляем панель после отправки события
-                                updateDebugPanel();
-                            } catch (e) {
-                                syntheticEventInfo = { error: e.message };
-                                updateDebugPanel();
-                                // Если не получилось создать TouchEvent - вешаем обработчик
-                                document.addEventListener('touchstart', calibrate, {
-                                    passive: true,
-                                    once: true,
-                                });
-                            }
+                            // Просто кликаем по body - браузер создаст touchstart с правильными screenX/screenY
+                            document.body.click();
                         } else {
                             // Если пользователь еще не взаимодействовал - вешаем обработчик
                             document.addEventListener('touchstart', calibrate, {
