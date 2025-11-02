@@ -239,17 +239,18 @@ hasBeenActive: ${navigator.userActivation?.hasBeenActive || false}`;
                 const offsets = loadOffsets();
                 if (offsets) {
                     applyOffsets(offsets.top, offsets.left);
+                } else {
+                    updateDebugPanel();
                 }
-                updateDebugPanel();
             }
 
             function handleOrientationChange() {
                 setTimeout(() => {
                     const offsets = loadOffsets();
-                    updateDebugPanel();
                     if (offsets) {
                         applyOffsets(offsets.top, offsets.left);
                     } else {
+                        updateDebugPanel();
                         document.addEventListener('touchstart', calibrate, {
                             passive: true,
                             once: true,
@@ -263,8 +264,6 @@ hasBeenActive: ${navigator.userActivation?.hasBeenActive || false}`;
                     document.addEventListener('touchstart', calibrate, { passive: true });
                     window.addEventListener('orientationchange', handleOrientationChange);
                 }
-
-                initializeOffsets();
             }
 
             init();
