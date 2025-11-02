@@ -276,19 +276,47 @@ hasBeenActive: ${navigator.userActivation?.hasBeenActive || false}
                     } else {
                         // Если нет offset'ов для новой ориентации
                         if (navigator.userActivation?.hasBeenActive) {
-                            // Пользователь уже взаимодействовал - генерируем синтетическое событие
+                            // Пользователь уже взаимодействовал - ищем любые сохраненные offset'ы
+                            let estimatedTopOffset = 0;
+                            let estimatedLeftOffset = 0;
+
+                            // Пробуем найти offset'ы из других ориентаций
+                            for (let angle = 0; angle <= 270; angle += 90) {
+                                const key = `${STORAGE_PREFIX}${angle}`;
+                                const stored = localStorage.getItem(key);
+                                if (stored) {
+                                    try {
+                                        const data = JSON.parse(stored);
+                                        estimatedTopOffset = data.top || 0;
+                                        estimatedLeftOffset = data.left || 0;
+                                        break;
+                                    } catch (e) {
+                                        // игнорируем ошибки парсинга
+                                    }
+                                }
+                            }
+
+                            // Если не нашли, вычисляем из размеров (симметричное смещение)
+                            if (estimatedTopOffset === 0 && estimatedLeftOffset === 0) {
+                                const diffHeight = window.screen.height - window.innerHeight;
+                                const diffWidth = window.screen.width - window.innerWidth;
+                                estimatedTopOffset = diffHeight > 0 ? diffHeight / 2 : 0;
+                                estimatedLeftOffset = diffWidth > 0 ? diffWidth / 2 : 0;
+                            }
+
+                            // Создаем синтетическое событие с вычисленными координатами
                             const centerX = window.innerWidth / 2;
                             const centerY = window.innerHeight / 2;
-                            const screenCenterX = window.screen.width / 2;
-                            const screenCenterY = window.screen.height / 2;
+                            const screenX = centerX + estimatedLeftOffset;
+                            const screenY = centerY + estimatedTopOffset;
 
                             const touch = new Touch({
                                 identifier: Date.now(),
                                 target: document.body,
                                 clientX: centerX,
                                 clientY: centerY,
-                                screenX: screenCenterX,
-                                screenY: screenCenterY,
+                                screenX: screenX,
+                                screenY: screenY,
                                 radiusX: 5,
                                 radiusY: 5,
                                 rotationAngle: 0,
