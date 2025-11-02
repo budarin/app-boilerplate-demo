@@ -295,10 +295,11 @@ ${data.debugInfo ? `DEBUG: ${data.debugInfo}` : ''}
                             `✅ Применяем сохраненные: top=${offsets.top.toFixed(1)}, left=${offsets.left.toFixed(1)}`
                         );
                         applyOffsets(offsets.top, offsets.left);
-                        setTimeout(
-                            () => updateDebugPanel({ debugInfo: debugMessages.join(' | ') }),
-                            50
-                        );
+                        updateDebugPanel({ debugInfo: debugMessages.join(' | ') });
+                        // Возвращаем цвет панели в нормальное состояние
+                        if (debugPanel) {
+                            debugPanel.style.background = 'rgb(255 255 255 / 70%)';
+                        }
                     } else {
                         // Если нет offset'ов для новой ориентации
                         if (hasBeenActive) {
@@ -373,19 +374,26 @@ ${data.debugInfo ? `DEBUG: ${data.debugInfo}` : ''}
                             updateDebugPanel({ debugInfo: debugMessages.join(' | ') });
                             calibrate(customEvent);
 
-                            setTimeout(() => {
-                                const newOffsets = loadOffsets();
-                                const finalDebug = newOffsets
-                                    ? `✅ Сохранено: top=${newOffsets.top.toFixed(1)}, left=${newOffsets.left.toFixed(1)}`
-                                    : `❌ Offset'ы не сохранились!`;
+                            // Проверяем сразу после calibrate (она синхронная)
+                            const newOffsets = loadOffsets();
+                            if (newOffsets) {
+                                const finalDebug = `✅ Сохранено: top=${newOffsets.top.toFixed(1)}, left=${newOffsets.left.toFixed(1)}`;
                                 updateDebugPanel({ debugInfo: finalDebug });
+                                // Зеленый при успешном сохранении, через секунду вернется в белый
                                 if (debugPanel) {
                                     debugPanel.style.background = 'rgb(200 255 200 / 90%)';
                                     setTimeout(() => {
                                         debugPanel.style.background = 'rgb(255 255 255 / 70%)';
                                     }, 1000);
                                 }
-                            }, 100);
+                            } else {
+                                // Красный если не сохранились
+                                const finalDebug = `❌ Offset'ы не сохранились! Проверьте синтетическое событие.`;
+                                updateDebugPanel({ debugInfo: finalDebug });
+                                if (debugPanel) {
+                                    debugPanel.style.background = 'rgb(255 200 200 / 90%)';
+                                }
+                            }
                         } else {
                             debugMessages.push('⏳ Ожидаем касания пользователя');
                             document.addEventListener('touchstart', calibrate, {
