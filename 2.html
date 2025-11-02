@@ -146,8 +146,10 @@
                     applyOffsets(offsets.top, offsets.left);
                     return true;
                 }
-                // Если нет offset'ов, центрируем по viewport (для десктопа)
-                applyOffsets(0, 0);
+                // Если нет offset'ов и нет touch - центрируем по viewport (для десктопа)
+                if (!('ontouchstart' in window)) {
+                    applyOffsets(0, 0);
+                }
                 return false;
             }
 
@@ -157,13 +159,14 @@
                 const offsets = loadOffsets();
                 if (offsets) {
                     applyOffsets(offsets.top, offsets.left);
-                } else {
-                    // Если нет offset'ов, центрируем по viewport (для десктопа)
-                    applyOffsets(0, 0);
                 }
             }
 
             function init() {
+                // Регистрируем обработчик touchstart для калибровки
+                document.addEventListener('touchstart', calibrate, { passive: true });
+
+                // Регистрируем обработчики смены ориентации
                 if ('ontouchstart' in window) {
                     window.addEventListener('orientationchange', handleOrientationChange);
                     if (screen.orientation) {
@@ -171,8 +174,29 @@
                     }
                 }
 
+                // Обработка resize (может измениться размер viewport)
+                let resizeTimeout;
+                window.addEventListener('resize', () => {
+                    clearTimeout(resizeTimeout);
+                    resizeTimeout = setTimeout(() => {
+                        const offsets = loadOffsets();
+                        if (offsets) {
+                            applyOffsets(offsets.top, offsets.left);
+                        } else {
+                            applyOffsets(0, 0);
+                        }
+                    }, 100);
+                });
+
                 // Загружаем offset'ы при запуске
                 initializeOffsets();
+            }
+
+            // Запуск при загрузке DOM
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', init);
+            } else {
+                init();
             }
         </script>
     </body>
