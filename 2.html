@@ -267,50 +267,50 @@ hasBeenActive: ${navigator.userActivation?.hasBeenActive || false}
             // ===== Обработка смены ориентации =====
 
             function handleOrientationChange() {
-                // Даем время браузеру обновить размеры
-                requestAnimationFrame(() => {
+                // Даем время браузеру обновить размеры после смены ориентации
+                setTimeout(() => {
                     const offsets = loadOffsets();
                     if (offsets) {
                         applyOffsets(offsets.top, offsets.left);
                         updateDebugPanel();
                     } else {
+                        // Если нет offset'ов для новой ориентации
                         if (navigator.userActivation?.hasBeenActive) {
-                            // Пользователь уже взаимодействовал - генерируем кастомное событие
-                            try {
-                                const customEvent = new TouchEvent('touchstart', {
-                                    bubbles: true,
-                                    cancelable: true,
-                                    touches: [
-                                        new Touch({
-                                            identifier: 0,
-                                            target: document.body,
-                                            clientX: window.innerWidth / 2,
-                                            clientY: window.innerHeight / 2,
-                                            screenX: window.screen.width / 2,
-                                            screenY: window.screen.height / 2,
-                                            radiusX: 0,
-                                            radiusY: 0,
-                                            rotationAngle: 0,
-                                            force: 0,
-                                        }),
-                                    ],
-                                    targetTouches: [],
-                                    changedTouches: [],
-                                    ctrlKey: false,
-                                    shiftKey: false,
-                                    altKey: false,
-                                    metaKey: false,
-                                });
-                                document.dispatchEvent(customEvent);
-                            } catch (e) {
-                                // Если не получилось - вешаем обработчик
-                                document.addEventListener('touchstart', calibrate, {
-                                    passive: true,
-                                    once: true,
-                                });
-                            }
+                            // Пользователь уже взаимодействовал - генерируем синтетическое событие
+                            const centerX = window.innerWidth / 2;
+                            const centerY = window.innerHeight / 2;
+                            const screenCenterX = window.screen.width / 2;
+                            const screenCenterY = window.screen.height / 2;
+
+                            const touch = new Touch({
+                                identifier: Date.now(),
+                                target: document.body,
+                                clientX: centerX,
+                                clientY: centerY,
+                                screenX: screenCenterX,
+                                screenY: screenCenterY,
+                                radiusX: 5,
+                                radiusY: 5,
+                                rotationAngle: 0,
+                                force: 0.5,
+                            });
+
+                            const customEvent = new TouchEvent('touchstart', {
+                                bubbles: true,
+                                cancelable: true,
+                                touches: [touch],
+                                targetTouches: [touch],
+                                changedTouches: [touch],
+                                ctrlKey: false,
+                                shiftKey: false,
+                                altKey: false,
+                                metaKey: false,
+                            });
+
+                            // Диспатчим событие напрямую в calibrate
+                            calibrate(customEvent);
                         } else {
-                            // Если пользователь еще не взаимодействовал - вешаем одноразовый обработчик
+                            // Пользователь еще не взаимодействовал - вешаем одноразовый обработчик
                             document.addEventListener('touchstart', calibrate, {
                                 passive: true,
                                 once: true,
@@ -318,7 +318,7 @@ hasBeenActive: ${navigator.userActivation?.hasBeenActive || false}
                         }
                         updateDebugPanel();
                     }
-                });
+                }, 150);
             }
 
             function init() {
