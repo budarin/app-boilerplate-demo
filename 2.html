@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en">
+<html lang="ru">
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Viewport Calibration Test</title>
+        <title>Тест центрирования иконки splash screen по экрану</title>
         <style>
             * {
                 box-sizing: border-box;
@@ -12,143 +12,30 @@
             }
 
             body {
-                overflow-x: hidden;
-                min-block-size: 100vh;
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                background: #f5f5f5;
+                overflow: hidden;
+                margin: 0;
+                padding: 0;
             }
 
-            .circle {
+            .icon {
                 position: fixed;
-                inset-block-start: 50vh;
-                inset-inline-start: 50%;
+                inset-block-start: var(--icon-top, 50%);
+                inset-inline-start: var(--icon-left, 50%);
                 transform: translate(-50%, -50%);
 
-                inline-size: 100px;
-                block-size: 100px;
+                inline-size: 120px;
+                block-size: 120px;
                 border-radius: 50%;
 
-                background: #3498db;
-                box-shadow: 0 4px 12px rgb(0 0 0 / 15%);
-            }
-
-            .info-panel {
-                position: fixed;
-                inset-block-end: 10px;
-                inset-inline-start: 10px;
-
-                padding-block: 10px;
-                padding-inline: 12px;
-                border-radius: 6px;
-
-                font-size: 11px;
-                line-height: 1.5;
-
-                background: rgb(255 255 255 / 95%);
-                box-shadow: 0 2px 8px rgb(0 0 0 / 10%);
-            }
-
-            .info-row {
-                display: flex;
-                gap: 6px;
-                margin-block-end: 3px;
-            }
-
-            .info-row:last-child {
-                margin-block-end: 0;
-            }
-
-            .info-label {
-                min-inline-size: 80px;
-                color: #7f8c8d;
-            }
-
-            .info-value {
-                font-weight: 500;
-                color: #2c3e50;
-            }
-
-            .status-badge {
-                display: inline-block;
-
-                padding-block: 2px;
-                padding-inline: 6px;
-                border-radius: 3px;
-
-                font-size: 10px;
-                font-weight: 600;
-            }
-
-            .status-ok {
-                color: #155724;
-                background: #d4edda;
-            }
-
-            .status-wait {
-                color: #856404;
-                background: #fff3cd;
-            }
-
-            .debug {
-                overflow-y: auto;
-
-                max-block-size: 60px;
-                margin-block-start: 8px;
-                padding: 6px;
-                border-radius: 4px;
-
-                font-size: 9px;
-                color: #666;
-
-                background: #f0f0f0;
+                background: linear-gradient(135deg, #41d1ff 0%, #bd34fe 100%);
             }
         </style>
     </head>
     <body>
-        <div class="circle"></div>
-
-        <div class="info-panel">
-            <div class="info-row">
-                <span class="info-label">Статус:</span>
-                <span class="info-value" id="status"></span>
-            </div>
-            <div class="info-row">
-                <span class="info-label">Поворот:</span>
-                <span class="info-value" id="angle"></span>
-            </div>
-            <div class="info-row">
-                <span class="info-label">Экран:</span>
-                <span class="info-value" id="screen"></span>
-            </div>
-            <div class="info-row">
-                <span class="info-label">Viewport:</span>
-                <span class="info-value" id="viewport"></span>
-            </div>
-            <div class="info-row">
-                <span class="info-label">Offset ↑:</span>
-                <span class="info-value" id="topOffset"></span>
-            </div>
-            <div class="info-row">
-                <span class="info-label">Offset ↓:</span>
-                <span class="info-value" id="bottomOffset"></span>
-            </div>
-            <div class="info-row">
-                <span class="info-label">Разница:</span>
-                <span class="info-value" id="diff"></span>
-            </div>
-            <div class="debug" id="debug">Ожидание событий...</div>
-        </div>
+        <div class="icon" id="icon"></div>
 
         <script>
-            const STORAGE_KEY = 'pwa_viewport_offsets';
-            let debugMessages = [];
-
-            function addDebug(msg) {
-                const now = new Date().toLocaleTimeString();
-                debugMessages.unshift(`[${now}] ${msg}`);
-                if (debugMessages.length > 5) debugMessages.pop();
-                document.getElementById('debug').innerHTML = debugMessages.join('<br>');
-            }
+            const STORAGE_PREFIX = 'splash_screen_offsets_';
 
             function getOrientation() {
                 if (screen.orientation && typeof screen.orientation.angle !== 'undefined') {
@@ -159,221 +46,134 @@
 
             function getStorageKey() {
                 const angle = getOrientation();
-                const screenHeight = window.screen.height;
-                const screenWidth = window.screen.width;
-                return `${STORAGE_KEY}_${angle}_${screenWidth}x${screenHeight}`;
+                return `${STORAGE_PREFIX}${angle}`;
             }
 
-            function loadViewportOffsets() {
+            // ===== Работа с localStorage =====
+
+            function loadOffsets() {
                 const key = getStorageKey();
                 const stored = localStorage.getItem(key);
                 if (stored) {
-                    const data = JSON.parse(stored);
-                    return { top: data.top, bottom: data.bottom };
+                    try {
+                        return JSON.parse(stored);
+                    } catch (e) {
+                        return null;
+                    }
                 }
                 return null;
             }
 
-            function saveViewportOffsets(topOffset, bottomOffset) {
+            function saveOffsets(topOffset, leftOffset) {
                 const key = getStorageKey();
-                localStorage.setItem(
-                    key,
-                    JSON.stringify({
-                        top: topOffset,
-                        bottom: bottomOffset,
-                    })
-                );
-                addDebug(`Saved: top=${topOffset.toFixed(1)}, bottom=${bottomOffset.toFixed(1)}`);
-            }
-
-            function getAngleName(angle) {
-                const names = {
-                    0: 'портрет',
-                    90: 'ландшафт →',
-                    180: 'портрет ↓',
-                    270: 'ландшафт ←',
-                    '-90': 'ландшафт ←',
+                const data = {
+                    top: topOffset,
+                    left: leftOffset,
                 };
-                return names[angle] || '';
+                localStorage.setItem(key, JSON.stringify(data));
             }
 
-            function updateInfoPanel() {
-                const angle = getOrientation();
-                const offsets = loadViewportOffsets();
-                const isCalibrated = offsets !== null;
+            // ===== Калибровка через touchstart =====
 
-                const screenHeight = window.screen.height;
-                const innerHeight = window.innerHeight;
-
-                // Статус
-                const statusEl = document.getElementById('status');
-                if (isCalibrated) {
-                    statusEl.innerHTML = '<span class="status-badge status-ok">✓ OK</span>';
-                } else {
-                    statusEl.innerHTML = '<span class="status-badge status-wait">⚠ Клик</span>';
-                }
-
-                // Поворот
-                document.getElementById('angle').textContent = `${angle}° ${getAngleName(angle)}`;
-
-                // Экран
-                document.getElementById('screen').textContent =
-                    `${window.screen.width} × ${screenHeight}`;
-
-                // Viewport
-                document.getElementById('viewport').textContent =
-                    `${window.innerWidth} × ${innerHeight}`;
-
-                // Offsets
-                if (offsets) {
-                    document.getElementById('topOffset').textContent =
-                        `${offsets.top.toFixed(1)} px`;
-                    document.getElementById('bottomOffset').textContent =
-                        `${offsets.bottom.toFixed(1)} px`;
-                    document.getElementById('diff').textContent =
-                        `${Math.abs(offsets.top - offsets.bottom).toFixed(1)} px`;
-                } else {
-                    document.getElementById('topOffset').textContent = '—';
-                    document.getElementById('bottomOffset').textContent = '—';
-                    document.getElementById('diff').textContent = '—';
-                }
-            }
-
-            function calculateSplashPosition() {
-                const screenHeight = window.screen.height;
-                const innerHeight = window.innerHeight;
-
-                let offsets = loadViewportOffsets();
-                let isCalibrated = true;
-
-                if (offsets === null) {
-                    const totalUIHeight = screenHeight - innerHeight;
-                    offsets = {
-                        top: totalUIHeight / 2,
-                        bottom: totalUIHeight / 2,
-                    };
-                    isCalibrated = false;
-                    addDebug('⚠️ NOT CALIBRATED! Click to calibrate on mobile');
-                }
-
-                const screenCenter = screenHeight / 2;
-                const topPosition = screenCenter - offsets.top;
-
-                // Устанавливаем стиль напрямую на элемент
-                const circleEl = document.querySelector('.circle');
-                if (circleEl) {
-                    circleEl.style.insetBlockStart = `${Math.round(topPosition)}px`;
-                }
-
-                addDebug(
-                    `${isCalibrated ? '✓' : '~'} Circle: ${Math.round(topPosition)}px | Screen center: ${screenCenter} | Top offset: ${offsets.top.toFixed(1)}`
-                );
-                updateInfoPanel();
-            }
-
-            function calibrate(e) {
-                const touch = e.touches ? e.touches[0] : e;
-                const clientY = touch.clientY;
+            function calibrate(event) {
+                const touch = event.touches ? event.touches[0] : event;
+                let screenX = touch.screenX;
                 let screenY = touch.screenY;
+                const clientX = touch.clientX;
+                const clientY = touch.clientY;
 
-                // Проверяем доступность screenY
-                if (typeof screenY === 'undefined' || screenY === 0) {
-                    // Fallback ТОЛЬКО для десктопа (есть окно с позицией)
-                    // На мобильном window.screenY всегда 0, поэтому проверяем > 0
-                    if (window.screenY > 0) {
+                // Проверяем доступность screenX/Y
+                if (typeof screenX === 'undefined' || typeof screenY === 'undefined') {
+                    // Fallback для десктопа
+                    if (window.screenX > 0 || window.screenY > 0) {
+                        screenX = window.screenX + clientX;
                         screenY = window.screenY + clientY;
-                        addDebug(
-                            `Desktop mode: window.screenY=${window.screenY}, clientY=${clientY}`
-                        );
                     } else {
-                        // На мобильном без screenY - невозможно откалибровать
-                        addDebug('⚠️ screenY unavailable, cannot calibrate');
                         return;
                     }
-                } else {
-                    addDebug(`Mobile mode: screenY=${screenY}, clientY=${clientY}`);
                 }
 
-                // Вычисляем текущие offset'ы
+                // Вычисляем offset'ы
                 const topOffset = screenY - clientY;
-                const bottomOffset = window.screen.height - (topOffset + window.innerHeight);
+                const leftOffset = screenX - clientX;
 
-                // Загружаем предыдущие значения
-                const prevOffsets = loadViewportOffsets();
+                // Загружаем существующие значения
+                const existing = loadOffsets();
 
-                // Проверяем, изменились ли данные (с погрешностью 1px)
+                // Проверяем, изменились ли значения (с погрешностью 1px)
                 const hasChanged =
-                    !prevOffsets ||
-                    Math.abs(prevOffsets.top - topOffset) > 1 ||
-                    Math.abs(prevOffsets.bottom - bottomOffset) > 1;
+                    !existing ||
+                    Math.abs(existing.top - topOffset) > 1 ||
+                    Math.abs(existing.left - leftOffset) > 1;
 
                 if (hasChanged) {
-                    saveViewportOffsets(topOffset, bottomOffset);
-                    calculateSplashPosition();
+                    saveOffsets(topOffset, leftOffset);
+                }
 
-                    // Подсветим, что данные обновились
-                    const statusEl = document.getElementById('status');
-                    statusEl.innerHTML = '<span class="status-badge status-ok">✓ Обновлено</span>';
+                // Всегда применяем offset'ы после касания
+                applyOffsets(topOffset, leftOffset);
+            }
 
-                    setTimeout(() => {
-                        updateInfoPanel();
-                    }, 1500);
+            // ===== Применение offset'ов к CSS переменным =====
+
+            function applyOffsets(topOffset, leftOffset) {
+                // Если нет touch (десктоп), центрируем по viewport
+                if (!('ontouchstart' in window)) {
+                    document.documentElement.style.setProperty('--icon-top', '50%');
+                    document.documentElement.style.setProperty('--icon-left', '50%');
+                    return;
+                }
+
+                // Вычисляем позицию центра экрана в координатах viewport
+                const screenCenterY = window.screen.height / 2;
+                const screenCenterX = window.screen.width / 2;
+
+                const iconTop = screenCenterY - topOffset;
+                const iconLeft = screenCenterX - leftOffset;
+
+                document.documentElement.style.setProperty('--icon-top', `${iconTop.toFixed(2)}px`);
+                document.documentElement.style.setProperty(
+                    '--icon-left',
+                    `${iconLeft.toFixed(2)}px`
+                );
+            }
+
+            // ===== Инициализация offset'ов при загрузке =====
+
+            function initializeOffsets() {
+                const offsets = loadOffsets();
+                if (offsets) {
+                    applyOffsets(offsets.top, offsets.left);
+                    return true;
+                }
+                // Если нет offset'ов, центрируем по viewport (для десктопа)
+                applyOffsets(0, 0);
+                return false;
+            }
+
+            // ===== Обработка смены ориентации =====
+
+            function handleOrientationChange() {
+                const offsets = loadOffsets();
+                if (offsets) {
+                    applyOffsets(offsets.top, offsets.left);
                 } else {
-                    addDebug('No change detected');
+                    // Если нет offset'ов, центрируем по viewport (для десктопа)
+                    applyOffsets(0, 0);
                 }
             }
 
-            window.addEventListener('resize', () => {
-                setTimeout(() => {
-                    addDebug(
-                        `Resize: innerHeight=${window.innerHeight}, window.screenY=${window.screenY}`
-                    );
-
-                    // Пересчитываем offset'ы при изменении размера viewport
-                    const offsets = loadViewportOffsets();
-
-                    if (offsets) {
-                        // На мобильном topOffset не меняется (браузер в fullscreen)
-                        // Используем сохраненный topOffset и пересчитываем только bottomOffset
-                        const newBottomOffset =
-                            window.screen.height - (offsets.top + window.innerHeight);
-
-                        const bottomChanged = Math.abs(offsets.bottom - newBottomOffset) > 1;
-
-                        if (bottomChanged) {
-                            saveViewportOffsets(offsets.top, newBottomOffset);
-                            calculateSplashPosition();
-                        } else {
-                            // Просто обновляем панель
-                            updateInfoPanel();
-                        }
-                    } else {
-                        updateInfoPanel();
+            function init() {
+                if ('ontouchstart' in window) {
+                    window.addEventListener('orientationchange', handleOrientationChange);
+                    if (screen.orientation) {
+                        screen.orientation.addEventListener('change', handleOrientationChange);
                     }
-                }, 100);
-            });
+                }
 
-            document.addEventListener('touchstart', calibrate, { passive: true });
-            document.addEventListener('click', calibrate);
-
-            window.addEventListener('orientationchange', () => {
-                setTimeout(() => {
-                    addDebug('Orientation changed');
-                    calculateSplashPosition();
-                }, 300);
-            });
-
-            if (screen.orientation) {
-                screen.orientation.addEventListener('change', () => {
-                    setTimeout(() => {
-                        addDebug('Screen orientation changed');
-                        calculateSplashPosition();
-                    }, 300);
-                });
+                // Загружаем offset'ы при запуске
+                initializeOffsets();
             }
-
-            calculateSplashPosition();
-            addDebug('Init complete');
         </script>
     </body>
 </html>
