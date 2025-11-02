@@ -41,6 +41,31 @@
 
                 background: linear-gradient(135deg, #41d1ff 0%, #bd34fe 100%);
             }
+
+            .icon::before,
+            .icon::after {
+                pointer-events: none;
+                content: '';
+
+                position: absolute;
+                z-index: 1;
+                inset-block-start: 50%;
+                inset-inline-start: 50%;
+
+                background: rgb(0 0 0 / 80%);
+            }
+
+            .icon::before {
+                transform: translate(-50%, -50%);
+                inline-size: 1px;
+                block-size: 100%;
+            }
+
+            .icon::after {
+                transform: translate(-50%, -50%);
+                inline-size: 100%;
+                block-size: 1px;
+            }
         </style>
     </head>
     <body>
