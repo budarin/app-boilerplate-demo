@@ -6,14 +6,14 @@
         <title>Тест центрирования иконки splash screen по экрану</title>
         <style>
             @property --offset-x {
-                inherits: false;
+                inherits: true;
                 /* stylelint-disable-next-line */
                 initial-value: 0px;
                 syntax: '<length>';
             }
 
             @property --offset-y {
-                inherits: false;
+                inherits: true;
                 /* stylelint-disable-next-line */
                 initial-value: 0px;
                 syntax: '<length>';
@@ -141,6 +141,7 @@
 
                 const offsets = loadOffsets();
                 const orientation = getOrientation();
+                // С inherits: true переменные наследуются, читаем с documentElement или элемента
                 const computedStyle = getComputedStyle(document.documentElement);
                 const offsetX = computedStyle.getPropertyValue('--offset-x').trim();
                 const offsetY = computedStyle.getPropertyValue('--offset-y').trim();
@@ -150,7 +151,6 @@
                 const viewportCenterX = window.innerWidth / 2;
                 const viewportCenterY = window.innerHeight / 2;
 
-                const icon = document.getElementById('icon');
                 const iconTransform = icon ? getComputedStyle(icon).transform : 'N/A';
                 const iconRect = icon ? icon.getBoundingClientRect() : null;
                 const iconCenterX = iconRect ? iconRect.left + iconRect.width / 2 : 'N/A';
@@ -262,6 +262,7 @@ hasBeenActive: ${navigator.userActivation?.hasBeenActive || false}${syntheticTex
                 const offsetXStr = `${offsetX.toFixed(2)}px`;
                 const offsetYStr = `${offsetY.toFixed(2)}px`;
 
+                // С inherits: true переменные наследуются от :root, поэтому устанавливаем на documentElement
                 document.documentElement.style.setProperty('--offset-x', offsetXStr);
                 document.documentElement.style.setProperty('--offset-y', offsetYStr);
 
@@ -272,9 +273,9 @@ hasBeenActive: ${navigator.userActivation?.hasBeenActive || false}${syntheticTex
             }
 
             function initializeOffsets() {
-                // Явно инициализируем переменные в 0px
-                document.documentElement.style.setProperty('--offset-x');
-                document.documentElement.style.setProperty('--offset-y');
+                // Явно инициализируем переменные в 0px на :root (наследуются с inherits: true)
+                document.documentElement.style.setProperty('--offset-x', '0px');
+                document.documentElement.style.setProperty('--offset-y', '0px');
 
                 const offsets = loadOffsets();
                 if (offsets) {
