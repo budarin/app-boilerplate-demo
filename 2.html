@@ -5,16 +5,9 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Тест центрирования иконки splash screen по экрану</title>
         <style>
-            @property --offset-y {
-                inherits: false;
-                initial-value: 0;
-                syntax: '<length>';
-            }
-
-            @property --offset-x {
-                inherits: false;
-                initial-value: 0;
-                syntax: '<length>';
+            :root {
+                --offset-x: 0px;
+                --offset-y: 0px;
             }
 
             * {
@@ -30,10 +23,12 @@
             }
 
             .icon {
+                will-change: transform;
+
                 position: fixed;
                 inset-block-start: 50%;
                 inset-inline-start: 50%;
-                transform: translate(-50%, -50%) translate(var(--offset-x, 0), var(--offset-y, 0));
+                transform: translate(calc(-50% + var(--offset-x)), calc(-50% + var(--offset-y)));
 
                 inline-size: 120px;
                 block-size: 120px;
