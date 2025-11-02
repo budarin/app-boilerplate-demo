@@ -112,6 +112,22 @@
                 const viewportCenterX = window.innerWidth / 2;
                 const viewportCenterY = window.innerHeight / 2;
 
+                const icon = document.getElementById('icon');
+                const iconTransform = icon ? getComputedStyle(icon).transform : 'N/A';
+                const iconRect = icon ? icon.getBoundingClientRect() : null;
+                const iconCenterX = iconRect ? iconRect.left + iconRect.width / 2 : 'N/A';
+                const iconCenterY = iconRect ? iconRect.top + iconRect.height / 2 : 'N/A';
+
+                let calcText = '';
+                if (offsets) {
+                    const viewportCenterOnScreenX = offsets.left + viewportCenterX;
+                    const viewportCenterOnScreenY = offsets.top + viewportCenterY;
+                    const calculatedOffsetX = screenCenterX - viewportCenterOnScreenX;
+                    const calculatedOffsetY = screenCenterY - viewportCenterOnScreenY;
+                    calcText = `calc: viewportCenter на экране: ${viewportCenterOnScreenX.toFixed(1)}×${viewportCenterOnScreenY.toFixed(1)}
+calc: должен быть offset: ${calculatedOffsetX.toFixed(1)}×${calculatedOffsetY.toFixed(1)}`;
+                }
+
                 const text = `Ориентация: ${orientation}°
 Экран: ${window.screen.width}×${window.screen.height}
 Viewport: ${window.innerWidth}×${window.innerHeight}
@@ -123,8 +139,11 @@ Left offset: ${offsets.left.toFixed(1)}px`
 }
 screenCenter: ${screenCenterX.toFixed(1)}×${screenCenterY.toFixed(1)}
 viewportCenter: ${viewportCenterX.toFixed(1)}×${viewportCenterY.toFixed(1)}
+${calcText}
 --offset-x: ${offsetX || '0'}
 --offset-y: ${offsetY || '0'}
+transform: ${iconTransform}
+iconCenter: ${typeof iconCenterX === 'number' ? `${iconCenterX.toFixed(1)}×${iconCenterY.toFixed(1)}` : iconCenterX}
 hasBeenActive: ${navigator.userActivation?.hasBeenActive || false}`;
 
                 panel.innerHTML = text
@@ -184,9 +203,16 @@ hasBeenActive: ${navigator.userActivation?.hasBeenActive || false}`;
                 const offsetY = screenCenterY - (topOffset + viewportCenterY);
                 const offsetX = screenCenterX - (leftOffset + viewportCenterX);
 
-                document.documentElement.style.setProperty('--offset-x', `${offsetX.toFixed(2)}px`);
-                document.documentElement.style.setProperty('--offset-y', `${offsetY.toFixed(2)}px`);
-                updateDebugPanel();
+                const offsetXStr = `${offsetX.toFixed(2)}px`;
+                const offsetYStr = `${offsetY.toFixed(2)}px`;
+
+                document.documentElement.style.setProperty('--offset-x', offsetXStr);
+                document.documentElement.style.setProperty('--offset-y', offsetYStr);
+
+                // Принудительное обновление через requestAnimationFrame
+                requestAnimationFrame(() => {
+                    updateDebugPanel();
+                });
             }
 
             function initializeOffsets() {
