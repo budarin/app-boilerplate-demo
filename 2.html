@@ -5,6 +5,18 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Тест центрирования иконки splash screen по экрану</title>
         <style>
+            @property --offset-y {
+                inherits: false;
+                initial-value: 0;
+                syntax: '<length>';
+            }
+
+            @property --offset-x {
+                inherits: false;
+                initial-value: 0;
+                syntax: '<length>';
+            }
+
             * {
                 box-sizing: border-box;
                 margin: 0;
@@ -19,9 +31,9 @@
 
             .icon {
                 position: fixed;
-                inset-block-start: var(--icon-top, 50%);
-                inset-inline-start: var(--icon-left, 50%);
-                transform: translate(-50%, -50%);
+                inset-block-start: 50%;
+                inset-inline-start: 50%;
+                transform: translate(calc(-50% + var(--offset-x)), calc(-50% + var(--offset-y)));
 
                 inline-size: 120px;
                 block-size: 120px;
@@ -29,35 +41,10 @@
 
                 background: linear-gradient(135deg, #41d1ff 0%, #bd34fe 100%);
             }
-
-            .debug-panel {
-                pointer-events: auto;
-                cursor: pointer;
-
-                position: fixed;
-                inset-block-start: 10px;
-                inset-inline-end: 10px;
-
-                padding: 8px;
-                border-radius: 4px;
-
-                font-family: monospace;
-                font-size: 10px;
-                line-height: 1.3;
-                color: #000;
-
-                background: rgb(255 255 255 / 70%);
-            }
-
-            .debug-row {
-                margin-block-end: 2px;
-                white-space: nowrap;
-            }
         </style>
     </head>
     <body>
         <div class="icon" id="icon"></div>
-        <div class="debug-panel" id="debugPanel"></div>
 
         <script>
             const STORAGE_PREFIX = 'splash_screen_offsets_';
@@ -70,15 +57,11 @@
             }
 
             function getStorageKey() {
-                const angle = getOrientation();
-                return `${STORAGE_PREFIX}${angle}`;
+                return `${STORAGE_PREFIX}${getOrientation()}`;
             }
 
-            // ===== Работа с localStorage =====
-
             function loadOffsets() {
-                const key = getStorageKey();
-                const stored = localStorage.getItem(key);
+                const stored = localStorage.getItem(getStorageKey());
                 if (stored) {
                     try {
                         return JSON.parse(stored);
@@ -90,59 +73,23 @@
             }
 
             function saveOffsets(topOffset, leftOffset) {
-                const key = getStorageKey();
-                const data = {
-                    top: topOffset,
-                    left: leftOffset,
-                };
-                localStorage.setItem(key, JSON.stringify(data));
+                localStorage.setItem(
+                    getStorageKey(),
+                    JSON.stringify({ top: topOffset, left: leftOffset })
+                );
             }
-
-            // ===== Калибровка через touchstart =====
 
             function calibrate(event) {
                 const touch = event.touches ? event.touches[0] : event;
-                let screenX = touch.screenX;
-                let screenY = touch.screenY;
+                const screenX = touch.screenX;
+                const screenY = touch.screenY;
                 const clientX = touch.clientX;
                 const clientY = touch.clientY;
 
-                // Проверяем доступность screenX/Y
-                if (
-                    typeof screenX === 'undefined' ||
-                    typeof screenY === 'undefined' ||
-                    screenX === 0 ||
-                    screenY === 0
-                ) {
-                    // Fallback только для десктопа (если окно сдвинуто)
-                    if (window.screenX > 0 || window.screenY > 0) {
-                        screenX = window.screenX + clientX;
-                        screenY = window.screenY + clientY;
-                    } else {
-                        // На touch устройстве без screenX/Y - не можем калибровать, выходим
-                        return;
-                    }
-                }
-
-                // Вычисляем offset'ы от краёв экрана
                 const topOffset = screenY - clientY;
                 const leftOffset = screenX - clientX;
 
-                // Обновляем отладочную панель
-                updateDebugPanel({
-                    screenY,
-                    clientY,
-                    topOffset,
-                    screenX,
-                    clientX,
-                    leftOffset,
-                    debugInfo: `calibrate called: top=${topOffset.toFixed(1)}, left=${leftOffset.toFixed(1)}`,
-                });
-
-                // Загружаем существующие значения
                 const existing = loadOffsets();
-
-                // Проверяем, изменились ли значения (с погрешностью 1px)
                 const hasChanged =
                     !existing ||
                     Math.abs(existing.top - topOffset) > 1 ||
@@ -152,280 +99,77 @@
                     saveOffsets(topOffset, leftOffset);
                 }
 
-                // Всегда применяем offset'ы после касания
                 applyOffsets(topOffset, leftOffset);
             }
 
-            // ===== Применение offset'ов к CSS переменным =====
-
             function applyOffsets(topOffset, leftOffset) {
-                // Если нет touch (десктоп), центрируем по viewport
-                if (!('ontouchstart' in window)) {
-                    document.documentElement.style.setProperty('--icon-top', '50%');
-                    document.documentElement.style.setProperty('--icon-left', '50%');
-                    return;
-                }
+                const offsetY = (window.screen.height - window.innerHeight) / 2 - topOffset;
+                const offsetX = (window.screen.width - window.innerWidth) / 2 - leftOffset;
 
-                // Вычисляем позицию центра экрана в координатах viewport
-                const screenCenterY = window.screen.height / 2;
-                const screenCenterX = window.screen.width / 2;
-
-                const iconTop = screenCenterY - topOffset;
-                const iconLeft = screenCenterX - leftOffset;
-
-                // Обновляем отладочную панель
-                updateDebugPanel({
-                    screenCenterY,
-                    screenCenterX,
-                    iconTop,
-                    iconLeft,
-                    topOffset,
-                    leftOffset,
-                });
-
-                document.documentElement.style.setProperty('--icon-top', `${iconTop.toFixed(2)}px`);
-                document.documentElement.style.setProperty(
-                    '--icon-left',
-                    `${iconLeft.toFixed(2)}px`
-                );
+                document.documentElement.style.setProperty('--offset-x', `${offsetX.toFixed(2)}px`);
+                document.documentElement.style.setProperty('--offset-y', `${offsetY.toFixed(2)}px`);
             }
-
-            // ===== Отладочная панель =====
-
-            function updateDebugPanel(data = {}) {
-                const panel = document.getElementById('debugPanel');
-                if (!panel) return;
-
-                const offsets = loadOffsets();
-                const screenHeight = window.screen.height;
-                const screenWidth = window.screen.width;
-                const innerHeight = window.innerHeight;
-                const innerWidth = window.innerWidth;
-                const orientation = getOrientation();
-
-                const computedStyle = getComputedStyle(document.documentElement);
-                const iconTop = computedStyle.getPropertyValue('--icon-top').trim();
-                const iconLeft = computedStyle.getPropertyValue('--icon-left').trim();
-
-                const debugText = `
-Ориентация: ${orientation}°
-Экран: ${screenWidth}×${screenHeight}
-Viewport: ${innerWidth}×${innerHeight}
-${
-    offsets
-        ? `Top offset: ${offsets.top.toFixed(1)}px
-Left offset: ${offsets.left.toFixed(1)}px`
-        : 'Не калибровано'
-}
-${
-    data.screenCenterY !== undefined
-        ? `Центр экрана Y: ${data.screenCenterY.toFixed(1)}px
-Центр экрана X: ${data.screenCenterX?.toFixed(1) || '—'}px
-Иконка top: ${data.iconTop?.toFixed(1) || '—'}px
-Иконка left: ${data.iconLeft?.toFixed(1) || '—'}px`
-        : ''
-}
-${
-    data.screenY !== undefined
-        ? `Touch screenY: ${data.screenY.toFixed(1)}
-Touch clientY: ${data.clientY.toFixed(1)}
-Touch screenX: ${data.screenX?.toFixed(1) || '—'}
-Touch clientX: ${data.clientX?.toFixed(1) || '—'}`
-        : ''
-}
-CSS top: ${iconTop || '50%'}
-CSS left: ${iconLeft || '50%'}
-hasBeenActive: ${navigator.userActivation?.hasBeenActive || false}
-${data.debugInfo ? `DEBUG: ${data.debugInfo}` : ''}
-`;
-
-                panel.innerHTML = debugText
-                    .split('\n')
-                    .filter((line) => line.trim())
-                    .map((line) => `<div class="debug-row">${line}</div>`)
-                    .join('');
-
-                // Добавляем обработчик клика для копирования
-                panel.onclick = () => {
-                    navigator.clipboard.writeText(debugText.trim()).then(() => {
-                        const originalBg = panel.style.background;
-                        panel.style.background = 'rgb(144 238 144 / 70%)';
-                        setTimeout(() => {
-                            panel.style.background = originalBg;
-                        }, 200);
-                    });
-                };
-            }
-
-            // ===== Инициализация offset'ов при загрузке =====
 
             function initializeOffsets() {
                 const offsets = loadOffsets();
                 if (offsets) {
                     applyOffsets(offsets.top, offsets.left);
-                    return true;
                 }
-                // Если нет offset'ов и нет touch - центрируем по viewport (для десктопа)
-                if (!('ontouchstart' in window)) {
-                    applyOffsets(0, 0);
-                }
-                return false;
             }
 
-            // ===== Обработка смены ориентации =====
-
             function handleOrientationChange() {
-                // Даем время браузеру обновить размеры после смены ориентации
                 setTimeout(() => {
-                    const currentOrientation = getOrientation();
                     const offsets = loadOffsets();
-                    const hasBeenActive = navigator.userActivation?.hasBeenActive;
-
-                    // Обновляем отладку ПЕРЕД любой логикой
-                    const debugPanel = document.getElementById('debugPanel');
-
-                    let debugMessages = [`🔥 ORIENTATION CHANGE: ${currentOrientation}°`];
-                    debugMessages.push(`hasOffsets: ${!!offsets}, hasBeenActive: ${hasBeenActive}`);
-
                     if (offsets) {
-                        debugMessages.push(
-                            `✅ Применяем сохраненные: top=${offsets.top.toFixed(1)}, left=${offsets.left.toFixed(1)}`
-                        );
                         applyOffsets(offsets.top, offsets.left);
-                        updateDebugPanel({ debugInfo: debugMessages.join(' | ') });
-                        // Зеленый при успешном применении, через секунду вернется в белый
-                        if (debugPanel) {
-                            debugPanel.style.background = 'rgb(200 255 200 / 90%)';
-                            setTimeout(() => {
-                                debugPanel.style.background = 'rgb(255 255 255 / 70%)';
-                            }, 1000);
-                        }
+                    } else if (navigator.userActivation?.hasBeenActive) {
+                        const diffHeight = window.screen.height - window.innerHeight;
+                        const diffWidth = window.screen.width - window.innerWidth;
+
+                        const centerX = window.innerWidth / 2;
+                        const centerY = window.innerHeight / 2;
+
+                        const touch = new Touch({
+                            identifier: Date.now(),
+                            target: document.body,
+                            clientX: centerX,
+                            clientY: centerY,
+                            screenX: centerX,
+                            screenY: centerY,
+                            radiusX: 5,
+                            radiusY: 5,
+                            rotationAngle: 0,
+                            force: 0.5,
+                        });
+
+                        const customEvent = new TouchEvent('touchstart', {
+                            bubbles: true,
+                            cancelable: true,
+                            touches: [touch],
+                            targetTouches: [touch],
+                            changedTouches: [touch],
+                            ctrlKey: false,
+                            shiftKey: false,
+                            altKey: false,
+                            metaKey: false,
+                        });
+
+                        calibrate(customEvent);
                     } else {
-                        // Если нет offset'ов - красный цвет
-                        if (debugPanel) {
-                            debugPanel.style.background = 'rgb(255 200 200 / 90%)';
-                        }
-                        // Если нет offset'ов для новой ориентации
-                        if (hasBeenActive) {
-                            debugMessages.push('🔴 Генерируем синтетическое событие');
-
-                            // ВАЖНО: Работает для ВСЕХ ориентаций (0°, 90°, 180°, 270°)
-                            // Нельзя использовать offset'ы из других ориентаций напрямую!
-                            // Каждая ориентация имеет свои offset'ы, вычисляем из размеров
-                            const diffHeight = window.screen.height - window.innerHeight;
-                            const diffWidth = window.screen.width - window.innerWidth;
-
-                            // Универсальный алгоритм для всех ориентаций:
-                            // Viewport обычно смещен из-за UI браузера (адресная строка и т.д.)
-                            // Используем приблизительное вычисление: 30% сверху от общей разницы
-                            // Синтетическое событие позволит calibrate() получить РЕАЛЬНЫЕ offset'ы
-                            let estimatedTopOffset = 0;
-                            let estimatedLeftOffset = 0;
-
-                            // Вычисляем из размеров (работает для 0°, 90°, 180°, 270°)
-                            if (diffHeight > 0) {
-                                estimatedTopOffset = Math.min(diffHeight * 0.3, diffHeight / 2);
-                            }
-                            if (diffWidth > 0) {
-                                estimatedLeftOffset = diffWidth / 2;
-                            }
-
-                            debugMessages.push(
-                                `Размеры: screen=${window.screen.width}×${window.screen.height}, viewport=${window.innerWidth}×${window.innerHeight}`
-                            );
-                            debugMessages.push(
-                                `Разница: diffH=${diffHeight.toFixed(0)}, diffW=${diffWidth.toFixed(0)}`
-                            );
-                            debugMessages.push(
-                                `Оценка offset (${currentOrientation}°): top=${estimatedTopOffset.toFixed(1)}, left=${estimatedLeftOffset.toFixed(1)}`
-                            );
-
-                            // Создаем синтетическое событие
-                            const centerX = window.innerWidth / 2;
-                            const centerY = window.innerHeight / 2;
-                            const screenX = centerX + estimatedLeftOffset;
-                            const screenY = centerY + estimatedTopOffset;
-
-                            debugMessages.push(
-                                `Координаты: screenX=${screenX.toFixed(1)}, screenY=${screenY.toFixed(1)}`
-                            );
-
-                            const touch = new Touch({
-                                identifier: Date.now(),
-                                target: document.body,
-                                clientX: centerX,
-                                clientY: centerY,
-                                screenX: screenX,
-                                screenY: screenY,
-                                radiusX: 5,
-                                radiusY: 5,
-                                rotationAngle: 0,
-                                force: 0.5,
-                            });
-
-                            const customEvent = new TouchEvent('touchstart', {
-                                bubbles: true,
-                                cancelable: true,
-                                touches: [touch],
-                                targetTouches: [touch],
-                                changedTouches: [touch],
-                                ctrlKey: false,
-                                shiftKey: false,
-                                altKey: false,
-                                metaKey: false,
-                            });
-
-                            updateDebugPanel({ debugInfo: debugMessages.join(' | ') });
-                            calibrate(customEvent);
-
-                            // Проверяем сразу после calibrate (она синхронная)
-                            const newOffsets = loadOffsets();
-                            if (newOffsets) {
-                                const finalDebug = `✅ Сохранено: top=${newOffsets.top.toFixed(1)}, left=${newOffsets.left.toFixed(1)}`;
-                                updateDebugPanel({ debugInfo: finalDebug });
-                                // Зеленый при успешном сохранении, через секунду вернется в белый
-                                if (debugPanel) {
-                                    debugPanel.style.background = 'rgb(200 255 200 / 90%)';
-                                    setTimeout(() => {
-                                        debugPanel.style.background = 'rgb(255 255 255 / 70%)';
-                                    }, 1000);
-                                }
-                            } else {
-                                // Остается красный если не сохранились
-                                const finalDebug = `❌ Offset'ы не сохранились! Проверьте синтетическое событие.`;
-                                updateDebugPanel({ debugInfo: finalDebug });
-                            }
-                        } else {
-                            debugMessages.push('⏳ Ожидаем касания пользователя');
-                            document.addEventListener('touchstart', calibrate, {
-                                passive: true,
-                                once: true,
-                            });
-                            updateDebugPanel({ debugInfo: debugMessages.join(' | ') });
-                        }
+                        document.addEventListener('touchstart', calibrate, {
+                            passive: true,
+                            once: true,
+                        });
                     }
                 }, 150);
             }
 
             function init() {
-                // Регистрируем обработчик touchstart для калибровки
-                if ('ontouchstart' in window) {
-                    document.addEventListener('touchstart', calibrate, { passive: true });
-                }
-
-                // Регистрируем обработчики смены ориентации
                 if ('ontouchstart' in window) {
                     window.addEventListener('orientationchange', handleOrientationChange);
-                    if (screen.orientation) {
-                        screen.orientation.addEventListener('change', handleOrientationChange);
-                    }
                 }
 
-                // Загружаем offset'ы при запуске
                 initializeOffsets();
-
-                // Обновляем отладочную панель
-                updateDebugPanel();
             }
 
             init();
