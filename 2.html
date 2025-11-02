@@ -282,22 +282,35 @@ ${data.debugInfo ? `DEBUG: ${data.debugInfo}` : ''}
                 setTimeout(() => {
                     const currentOrientation = getOrientation();
                     const offsets = loadOffsets();
+                    const hasBeenActive = navigator.userActivation?.hasBeenActive;
 
-                    updateDebugPanel({
-                        debugInfo: `Orientation changed to ${currentOrientation}°, hasOffsets: ${!!offsets}`,
-                    });
+                    // Обновляем отладку ПЕРЕД любой логикой
+                    const debugPanel = document.getElementById('debugPanel');
+                    if (debugPanel) {
+                        debugPanel.style.background = 'rgb(255 200 200 / 90%)';
+                    }
+
+                    let debugMessages = [`🔥 ORIENTATION CHANGE: ${currentOrientation}°`];
+                    debugMessages.push(`hasOffsets: ${!!offsets}, hasBeenActive: ${hasBeenActive}`);
 
                     if (offsets) {
+                        debugMessages.push(
+                            `✅ Применяем сохраненные: top=${offsets.top.toFixed(1)}, left=${offsets.left.toFixed(1)}`
+                        );
                         applyOffsets(offsets.top, offsets.left);
-                        updateDebugPanel();
+                        setTimeout(
+                            () => updateDebugPanel({ debugInfo: debugMessages.join(' | ') }),
+                            50
+                        );
                     } else {
                         // Если нет offset'ов для новой ориентации
-                        if (navigator.userActivation?.hasBeenActive) {
-                            // Пользователь уже взаимодействовал - ищем любые сохраненные offset'ы
+                        if (hasBeenActive) {
+                            debugMessages.push('🔴 Генерируем синтетическое событие');
+
+                            // Ищем любые сохраненные offset'ы
                             let estimatedTopOffset = 0;
                             let estimatedLeftOffset = 0;
 
-                            // Пробуем найти offset'ы из других ориентаций
                             for (let angle = 0; angle <= 270; angle += 90) {
                                 const key = `${STORAGE_PREFIX}${angle}`;
                                 const stored = localStorage.getItem(key);
@@ -306,26 +319,34 @@ ${data.debugInfo ? `DEBUG: ${data.debugInfo}` : ''}
                                         const data = JSON.parse(stored);
                                         estimatedTopOffset = data.top || 0;
                                         estimatedLeftOffset = data.left || 0;
+                                        debugMessages.push(
+                                            `Найден offset ${angle}°: ${estimatedTopOffset.toFixed(1)}, ${estimatedLeftOffset.toFixed(1)}`
+                                        );
                                         break;
-                                    } catch (e) {
-                                        // игнорируем ошибки парсинга
-                                    }
+                                    } catch (e) {}
                                 }
                             }
 
-                            // Если не нашли, вычисляем из размеров (симметричное смещение)
+                            // Если не нашли, вычисляем из размеров
                             if (estimatedTopOffset === 0 && estimatedLeftOffset === 0) {
                                 const diffHeight = window.screen.height - window.innerHeight;
                                 const diffWidth = window.screen.width - window.innerWidth;
                                 estimatedTopOffset = diffHeight > 0 ? diffHeight / 2 : 0;
                                 estimatedLeftOffset = diffWidth > 0 ? diffWidth / 2 : 0;
+                                debugMessages.push(
+                                    `Вычисляем из размеров: ${estimatedTopOffset.toFixed(1)}, ${estimatedLeftOffset.toFixed(1)}`
+                                );
                             }
 
-                            // Создаем синтетическое событие с вычисленными координатами
+                            // Создаем синтетическое событие
                             const centerX = window.innerWidth / 2;
                             const centerY = window.innerHeight / 2;
                             const screenX = centerX + estimatedLeftOffset;
                             const screenY = centerY + estimatedTopOffset;
+
+                            debugMessages.push(
+                                `Координаты: screenX=${screenX.toFixed(1)}, screenY=${screenY.toFixed(1)}`
+                            );
 
                             const touch = new Touch({
                                 identifier: Date.now(),
@@ -352,20 +373,29 @@ ${data.debugInfo ? `DEBUG: ${data.debugInfo}` : ''}
                                 metaKey: false,
                             });
 
-                            // Диспатчим событие напрямую в calibrate
+                            updateDebugPanel({ debugInfo: debugMessages.join(' | ') });
                             calibrate(customEvent);
-                            updateDebugPanel({
-                                debugInfo: `Synthetic event sent: estTop=${estimatedTopOffset.toFixed(1)}, estLeft=${estimatedLeftOffset.toFixed(1)}`,
-                            });
+
+                            setTimeout(() => {
+                                const newOffsets = loadOffsets();
+                                const finalDebug = newOffsets
+                                    ? `✅ Сохранено: top=${newOffsets.top.toFixed(1)}, left=${newOffsets.left.toFixed(1)}`
+                                    : `❌ Offset'ы не сохранились!`;
+                                updateDebugPanel({ debugInfo: finalDebug });
+                                if (debugPanel) {
+                                    debugPanel.style.background = 'rgb(200 255 200 / 90%)';
+                                    setTimeout(() => {
+                                        debugPanel.style.background = 'rgb(255 255 255 / 70%)';
+                                    }, 1000);
+                                }
+                            }, 100);
                         } else {
-                            // Пользователь еще не взаимодействовал - вешаем одноразовый обработчик
+                            debugMessages.push('⏳ Ожидаем касания пользователя');
                             document.addEventListener('touchstart', calibrate, {
                                 passive: true,
                                 once: true,
                             });
-                            updateDebugPanel({
-                                debugInfo: 'Waiting for user touch...',
-                            });
+                            updateDebugPanel({ debugInfo: debugMessages.join(' | ') });
                         }
                     }
                 }, 150);
