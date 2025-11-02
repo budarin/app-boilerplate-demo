@@ -245,27 +245,30 @@ hasBeenActive: ${navigator.userActivation?.hasBeenActive || false}`;
             }
 
             function handleOrientationChange() {
+                // Таймаут нужен только для обновления размеров viewport после смены ориентации
                 setTimeout(() => {
-                    requestAnimationFrame(() => {
-                        const offsets = loadOffsets();
-                        if (offsets) {
-                            // Пересчитываем offsets для новой ориентации
-                            applyOffsets(offsets.top, offsets.left);
-                        } else {
-                            updateDebugPanel();
-                            document.addEventListener('touchstart', calibrate, {
-                                passive: true,
-                                once: true,
-                            });
-                        }
-                    });
-                }, 300);
+                    const offsets = loadOffsets();
+                    if (offsets) {
+                        applyOffsets(offsets.top, offsets.left);
+                    } else {
+                        updateDebugPanel();
+                        document.addEventListener('touchstart', calibrate, {
+                            passive: true,
+                            once: true,
+                        });
+                    }
+                }, 500);
             }
 
             function init() {
                 if ('ontouchstart' in window) {
                     document.addEventListener('touchstart', calibrate, { passive: true });
+
+                    // Слушаем оба события для надежности
                     window.addEventListener('orientationchange', handleOrientationChange);
+                    if (screen.orientation) {
+                        screen.orientation.addEventListener('change', handleOrientationChange);
+                    }
                 }
 
                 // Применяем offsets при загрузке страницы
