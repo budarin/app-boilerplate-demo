@@ -147,9 +147,6 @@
             }
 
             function initializeOffsets() {
-                document.documentElement.style.setProperty('--offset-x', '0px');
-                document.documentElement.style.setProperty('--offset-y', '0px');
-
                 const offsets = loadOffsets();
                 if (offsets) {
                     applyOffsets(offsets.top, offsets.left);
@@ -160,20 +157,14 @@
                 const offsets = loadOffsets();
                 if (offsets) {
                     applyOffsets(offsets.top, offsets.left);
+                } else {
+                    window.addEventListener('touchstart', calibrate, { passive: true, once: true });
                 }
             }
 
             function init() {
                 if ('ontouchstart' in window) {
                     window.addEventListener('orientationchange', handleOrientationChange);
-
-                    if (document.readyState === 'loading') {
-                        document.addEventListener('DOMContentLoaded', () => {
-                            requestAnimationFrame(initializeOffsets);
-                        });
-                    } else {
-                        requestAnimationFrame(initializeOffsets);
-                    }
                 }
             }
 
