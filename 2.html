@@ -45,6 +45,25 @@
     </head>
     <body>
         <div class="icon" id="icon"></div>
+        <div
+            id="debugPanel"
+            style="
+                pointer-events: auto;
+                cursor: pointer;
+
+                position: fixed;
+                inset-block-start: 10px;
+                inset-inline-end: 10px;
+
+                padding: 4px;
+
+                font-family: monospace;
+                font-size: 9px;
+                line-height: 1.2;
+
+                background: rgb(255 255 255 / 70%);
+            "
+        ></div>
 
         <script>
             const STORAGE_PREFIX = 'splash_screen_offsets_';
@@ -79,12 +98,55 @@
                 );
             }
 
+            function updateDebugPanel() {
+                const panel = document.getElementById('debugPanel');
+                if (!panel) return;
+
+                const offsets = loadOffsets();
+                const orientation = getOrientation();
+                const computedStyle = getComputedStyle(document.documentElement);
+                const offsetX = computedStyle.getPropertyValue('--offset-x').trim();
+                const offsetY = computedStyle.getPropertyValue('--offset-y').trim();
+
+                const text = `Ориентация: ${orientation}°
+Экран: ${window.screen.width}×${window.screen.height}
+Viewport: ${window.innerWidth}×${window.innerHeight}
+${
+    offsets
+        ? `Top offset: ${offsets.top.toFixed(1)}px
+Left offset: ${offsets.left.toFixed(1)}px`
+        : 'Не калибровано'
+}
+--offset-x: ${offsetX || '0'}
+--offset-y: ${offsetY || '0'}
+hasBeenActive: ${navigator.userActivation?.hasBeenActive || false}`;
+
+                panel.innerHTML = text
+                    .split('\n')
+                    .filter((line) => line.trim())
+                    .map((line) => `<div>${line}</div>`)
+                    .join('');
+
+                panel.onclick = () => {
+                    navigator.clipboard.writeText(text.trim());
+                    const originalBg = panel.style.background;
+                    panel.style.background = 'rgba(144,238,144,0.7)';
+                    setTimeout(() => {
+                        panel.style.background = originalBg;
+                    }, 200);
+                };
+            }
+
             function calibrate(event) {
                 const touch = event.touches ? event.touches[0] : event;
                 const screenX = touch.screenX;
                 const screenY = touch.screenY;
                 const clientX = touch.clientX;
                 const clientY = touch.clientY;
+
+                if (typeof screenX === 'undefined' || typeof screenY === 'undefined') {
+                    return;
+                }
 
                 const topOffset = screenY - clientY;
                 const leftOffset = screenX - clientX;
@@ -100,14 +162,22 @@
                 }
 
                 applyOffsets(topOffset, leftOffset);
+                updateDebugPanel();
             }
 
             function applyOffsets(topOffset, leftOffset) {
-                const offsetY = (window.screen.height - window.innerHeight) / 2 - topOffset;
-                const offsetX = (window.screen.width - window.innerWidth) / 2 - leftOffset;
+                const screenCenterY = window.screen.height / 2;
+                const screenCenterX = window.screen.width / 2;
+                const viewportCenterY = window.innerHeight / 2;
+                const viewportCenterX = window.innerWidth / 2;
+
+                // Смещение от центра viewport к центру экрана
+                const offsetY = screenCenterY - (topOffset + viewportCenterY);
+                const offsetX = screenCenterX - (leftOffset + viewportCenterX);
 
                 document.documentElement.style.setProperty('--offset-x', `${offsetX.toFixed(2)}px`);
                 document.documentElement.style.setProperty('--offset-y', `${offsetY.toFixed(2)}px`);
+                updateDebugPanel();
             }
 
             function initializeOffsets() {
@@ -115,46 +185,15 @@
                 if (offsets) {
                     applyOffsets(offsets.top, offsets.left);
                 }
+                updateDebugPanel();
             }
 
             function handleOrientationChange() {
                 setTimeout(() => {
                     const offsets = loadOffsets();
+                    updateDebugPanel();
                     if (offsets) {
                         applyOffsets(offsets.top, offsets.left);
-                    } else if (navigator.userActivation?.hasBeenActive) {
-                        const diffHeight = window.screen.height - window.innerHeight;
-                        const diffWidth = window.screen.width - window.innerWidth;
-
-                        const centerX = window.innerWidth / 2;
-                        const centerY = window.innerHeight / 2;
-
-                        const touch = new Touch({
-                            identifier: Date.now(),
-                            target: document.body,
-                            clientX: centerX,
-                            clientY: centerY,
-                            screenX: centerX,
-                            screenY: centerY,
-                            radiusX: 5,
-                            radiusY: 5,
-                            rotationAngle: 0,
-                            force: 0.5,
-                        });
-
-                        const customEvent = new TouchEvent('touchstart', {
-                            bubbles: true,
-                            cancelable: true,
-                            touches: [touch],
-                            targetTouches: [touch],
-                            changedTouches: [touch],
-                            ctrlKey: false,
-                            shiftKey: false,
-                            altKey: false,
-                            metaKey: false,
-                        });
-
-                        calibrate(customEvent);
                     } else {
                         document.addEventListener('touchstart', calibrate, {
                             passive: true,
