@@ -108,13 +108,22 @@
                 const clientY = touch.clientY;
 
                 // Проверяем доступность screenX/Y
-                if (typeof screenX === 'undefined' || typeof screenY === 'undefined') {
+                if (
+                    typeof screenX === 'undefined' ||
+                    typeof screenY === 'undefined' ||
+                    screenX === 0 ||
+                    screenY === 0
+                ) {
                     // Fallback для десктопа
                     if (window.screenX > 0 || window.screenY > 0) {
                         screenX = window.screenX + clientX;
                         screenY = window.screenY + clientY;
                     } else {
-                        return;
+                        // На мобильном без screenX/Y - используем вычисленные из размеров
+                        const diffHeight = window.screen.height - window.innerHeight;
+                        const diffWidth = window.screen.width - window.innerWidth;
+                        screenX = clientX + (diffWidth > 0 ? diffWidth / 2 : 0);
+                        screenY = clientY + (diffHeight > 0 ? diffHeight / 2 : 0);
                     }
                 }
 
@@ -130,6 +139,7 @@
                     screenX,
                     clientX,
                     leftOffset,
+                    debugInfo: `calibrate called: top=${topOffset.toFixed(1)}, left=${leftOffset.toFixed(1)}`,
                 });
 
                 // Загружаем существующие значения
@@ -229,6 +239,7 @@ Touch clientX: ${data.clientX?.toFixed(1) || '—'}`
 CSS top: ${iconTop || '50%'}
 CSS left: ${iconLeft || '50%'}
 hasBeenActive: ${navigator.userActivation?.hasBeenActive || false}
+${data.debugInfo ? `DEBUG: ${data.debugInfo}` : ''}
 `;
 
                 panel.innerHTML = debugText
@@ -269,7 +280,13 @@ hasBeenActive: ${navigator.userActivation?.hasBeenActive || false}
             function handleOrientationChange() {
                 // Даем время браузеру обновить размеры после смены ориентации
                 setTimeout(() => {
+                    const currentOrientation = getOrientation();
                     const offsets = loadOffsets();
+
+                    updateDebugPanel({
+                        debugInfo: `Orientation changed to ${currentOrientation}°, hasOffsets: ${!!offsets}`,
+                    });
+
                     if (offsets) {
                         applyOffsets(offsets.top, offsets.left);
                         updateDebugPanel();
@@ -337,14 +354,19 @@ hasBeenActive: ${navigator.userActivation?.hasBeenActive || false}
 
                             // Диспатчим событие напрямую в calibrate
                             calibrate(customEvent);
+                            updateDebugPanel({
+                                debugInfo: `Synthetic event sent: estTop=${estimatedTopOffset.toFixed(1)}, estLeft=${estimatedLeftOffset.toFixed(1)}`,
+                            });
                         } else {
                             // Пользователь еще не взаимодействовал - вешаем одноразовый обработчик
                             document.addEventListener('touchstart', calibrate, {
                                 passive: true,
                                 once: true,
                             });
+                            updateDebugPanel({
+                                debugInfo: 'Waiting for user touch...',
+                            });
                         }
-                        updateDebugPanel();
                     }
                 }, 150);
             }
