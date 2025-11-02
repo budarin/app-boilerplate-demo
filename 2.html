@@ -114,16 +114,13 @@
                     screenX === 0 ||
                     screenY === 0
                 ) {
-                    // Fallback для десктопа
+                    // Fallback только для десктопа (если окно сдвинуто)
                     if (window.screenX > 0 || window.screenY > 0) {
                         screenX = window.screenX + clientX;
                         screenY = window.screenY + clientY;
                     } else {
-                        // На мобильном без screenX/Y - используем вычисленные из размеров
-                        const diffHeight = window.screen.height - window.innerHeight;
-                        const diffWidth = window.screen.width - window.innerWidth;
-                        screenX = clientX + (diffWidth > 0 ? diffWidth / 2 : 0);
-                        screenY = clientY + (diffHeight > 0 ? diffHeight / 2 : 0);
+                        // На touch устройстве без screenX/Y - не можем калибровать, выходим
+                        return;
                     }
                 }
 
@@ -307,36 +304,36 @@ ${data.debugInfo ? `DEBUG: ${data.debugInfo}` : ''}
                         if (hasBeenActive) {
                             debugMessages.push('🔴 Генерируем синтетическое событие');
 
-                            // Ищем любые сохраненные offset'ы
+                            // ВАЖНО: Работает для ВСЕХ ориентаций (0°, 90°, 180°, 270°)
+                            // Нельзя использовать offset'ы из других ориентаций напрямую!
+                            // Каждая ориентация имеет свои offset'ы, вычисляем из размеров
+                            const diffHeight = window.screen.height - window.innerHeight;
+                            const diffWidth = window.screen.width - window.innerWidth;
+
+                            // Универсальный алгоритм для всех ориентаций:
+                            // Viewport обычно смещен из-за UI браузера (адресная строка и т.д.)
+                            // Используем приблизительное вычисление: 30% сверху от общей разницы
+                            // Синтетическое событие позволит calibrate() получить РЕАЛЬНЫЕ offset'ы
                             let estimatedTopOffset = 0;
                             let estimatedLeftOffset = 0;
 
-                            for (let angle = 0; angle <= 270; angle += 90) {
-                                const key = `${STORAGE_PREFIX}${angle}`;
-                                const stored = localStorage.getItem(key);
-                                if (stored) {
-                                    try {
-                                        const data = JSON.parse(stored);
-                                        estimatedTopOffset = data.top || 0;
-                                        estimatedLeftOffset = data.left || 0;
-                                        debugMessages.push(
-                                            `Найден offset ${angle}°: ${estimatedTopOffset.toFixed(1)}, ${estimatedLeftOffset.toFixed(1)}`
-                                        );
-                                        break;
-                                    } catch (e) {}
-                                }
+                            // Вычисляем из размеров (работает для 0°, 90°, 180°, 270°)
+                            if (diffHeight > 0) {
+                                estimatedTopOffset = Math.min(diffHeight * 0.3, diffHeight / 2);
+                            }
+                            if (diffWidth > 0) {
+                                estimatedLeftOffset = diffWidth / 2;
                             }
 
-                            // Если не нашли, вычисляем из размеров
-                            if (estimatedTopOffset === 0 && estimatedLeftOffset === 0) {
-                                const diffHeight = window.screen.height - window.innerHeight;
-                                const diffWidth = window.screen.width - window.innerWidth;
-                                estimatedTopOffset = diffHeight > 0 ? diffHeight / 2 : 0;
-                                estimatedLeftOffset = diffWidth > 0 ? diffWidth / 2 : 0;
-                                debugMessages.push(
-                                    `Вычисляем из размеров: ${estimatedTopOffset.toFixed(1)}, ${estimatedLeftOffset.toFixed(1)}`
-                                );
-                            }
+                            debugMessages.push(
+                                `Размеры: screen=${window.screen.width}×${window.screen.height}, viewport=${window.innerWidth}×${window.innerHeight}`
+                            );
+                            debugMessages.push(
+                                `Разница: diffH=${diffHeight.toFixed(0)}, diffW=${diffWidth.toFixed(0)}`
+                            );
+                            debugMessages.push(
+                                `Оценка offset (${currentOrientation}°): top=${estimatedTopOffset.toFixed(1)}, left=${estimatedLeftOffset.toFixed(1)}`
+                            );
 
                             // Создаем синтетическое событие
                             const centerX = window.innerWidth / 2;
