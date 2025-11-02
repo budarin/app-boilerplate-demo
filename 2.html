@@ -180,9 +180,9 @@ hasBeenActive: ${navigator.userActivation?.hasBeenActive || false}`;
                 // Иконка находится в центре viewport (50%)
                 // Центр viewport от верха/лева экрана = topOffset + viewportCenter
                 // Центр экрана = screenCenter
-                // Смещение = центр viewport - центр экрана (инвертировано)
-                const offsetY = topOffset + viewportCenterY - screenCenterY;
-                const offsetX = leftOffset + viewportCenterX - screenCenterX;
+                // Смещение = центр экрана - центр viewport (чтобы сдвинуть иконку к центру экрана)
+                const offsetY = screenCenterY - (topOffset + viewportCenterY);
+                const offsetX = screenCenterX - (leftOffset + viewportCenterX);
 
                 document.documentElement.style.setProperty('--offset-x', `${offsetX.toFixed(2)}px`);
                 document.documentElement.style.setProperty('--offset-y', `${offsetY.toFixed(2)}px`);
