@@ -150,6 +150,11 @@
                 const offsets = loadOffsets();
                 if (offsets) {
                     applyOffsets(offsets.top, offsets.left);
+                } else {
+                    document.addEventListener('touchstart', calibrate, {
+                        passive: true,
+                        once: true,
+                    });
                 }
             }
 
@@ -163,6 +168,8 @@
             }
 
             function init() {
+                initializeOffsets();
+
                 if ('ontouchstart' in window) {
                     window.addEventListener('orientationchange', handleOrientationChange);
                 }
