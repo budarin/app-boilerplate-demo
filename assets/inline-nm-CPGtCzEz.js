@@ -1,0 +1,1 @@
+function e(){let e=Promise.resolve(!0),t=setTimeout(()=>{e=new Promise(e=>{setTimeout(()=>{e(!0)},1350)});let t=document.querySelector(`.splash-screen__loader-text-container`);t&&(t.style.opacity=`1`)},1e3);window.getReadyToStartPromise=()=>e,window.splashScreenCleanup=()=>{clearTimeout(t),e=Promise.resolve(!0)}}e();
