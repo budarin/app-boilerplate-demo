@@ -27,9 +27,9 @@
   ],
   "icons": [
     {
-      "src": "./assets/app-icon-gWKOrH7P.png",
+      "src": "./assets/svgs/app-icon-BN31uYWN.svg",
       "sizes": "512x512",
-      "type": "image/png",
+      "type": "image/svg+xml",
       "purpose": "any"
     }
   ],
