@@ -27,11 +27,7 @@
   ],
   "icons": [
     {
-<<<<<<<< HEAD:manifest.light.krdHAbVV.webmanifest
       "src": "./assets/svgs/app-icon-DMaTbtng.svg",
-========
-      "src": "./assets/svgs/app-icon-BN31uYWN.svg",
->>>>>>>> 2a23565f9c16a40679442605263c1fada5f6f4b8:manifest.light.3NmCVFCI.webmanifest
       "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "any"
