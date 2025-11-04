@@ -7,10 +7,10 @@
   "display": "standalone",
   "start_url": "./",
   "short_name": "My Tasks Plus",
-  "theme_color": "#fff7ff",
+  "theme_color": "#151218",
   "description": "My Tasks Plus - application for managing personal tasks",
   "orientation": "any",
-  "background_color": "#fff7ff",
+  "background_color": "#151218",
   "prefer_related_applications": false,
   "categories": [
     "productivity"
@@ -27,9 +27,9 @@
   ],
   "icons": [
     {
-      "src": "./assets/app-icon-gWKOrH7P.png",
+      "src": "./assets/svgs/app-icon-DMaTbtng.svg",
       "sizes": "512x512",
-      "type": "image/png",
+      "type": "image/svg+xml",
       "purpose": "any"
     }
   ],
