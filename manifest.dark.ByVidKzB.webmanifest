@@ -11,14 +11,9 @@
   "description": "My Tasks Plus - application for managing personal tasks",
   "orientation": "any",
   "background_color": "#151218",
-  "prefer_related_applications": false,
   "categories": [
     "productivity"
   ],
-  "launch_handler": {
-    "client_mode": "auto"
-  },
-  "edge_side_panel": {},
   "features": [
     "кроссбраузерное",
     "кроссплатформенное",
