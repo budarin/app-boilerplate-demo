@@ -7,18 +7,13 @@
   "display": "standalone",
   "start_url": "./",
   "short_name": "My Tasks Plus",
-  "theme_color": "#151218",
+  "theme_color": "#FFF7FF",
   "description": "My Tasks Plus - application for managing personal tasks",
   "orientation": "any",
-  "background_color": "#151218",
-  "prefer_related_applications": false,
+  "background_color": "#FFF7FF",
   "categories": [
     "productivity"
   ],
-  "launch_handler": {
-    "client_mode": "auto"
-  },
-  "edge_side_panel": {},
   "features": [
     "кроссбраузерное",
     "кроссплатформенное",
